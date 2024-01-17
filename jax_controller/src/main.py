@@ -1,9 +1,22 @@
 import sys
-sys.path.append('jax_controller/')  # Adjust the path accordingly
+sys.path.append('jax_controller/') # To be able to import our own modules
 
-from config.config import LEARNING_RATE
-from controllers.base_controller import BaseController
+import config.config as config
 
-base_controller = BaseController(learning_rate=LEARNING_RATE)
+from consys import Consys
+from plants.bathtub_model import BathtubModel
+from controllers.classic_pid_controller import ClassicPIDController
 
-base_controller.learning_rate
+if config.PLANT == "bathtub":
+    plant = BathtubModel()
+
+if config.CONTROLLER == "classic":
+    controller = ClassicPIDController()
+
+
+consys = Consys(controller=controller,
+                plant=plant, 
+                epochs=config.NUM_EPOCHS, 
+                timesteps=config.NUM_TIMESTEPS,
+                disturbance_range=config.DISTURBANCE_RANGE)
+consys.run()
