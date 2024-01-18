@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 class BasePlant(ABC):
 
+    # TODO kanskje ikke abstract?
     @abstractmethod
     def reset_plant(self):
         """
@@ -11,8 +12,8 @@ class BasePlant(ABC):
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self, control_signal, disturbance):
         """
-        Updates the plant. Returns the output.
+        Updates the plant. Returns the error.
         """
         pass
