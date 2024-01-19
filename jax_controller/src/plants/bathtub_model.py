@@ -13,14 +13,16 @@ class BathtubModel(BasePlant):
         self.target = target
 
     def reset_plant(self):
+        # self.H = self.target
+        # # TODO trengs disse to her?
+        # self.V = sqrt(2 * 9.81 * self.H)
+        # self.Q = self.V * self.C
         pass
 
-    def update(self, control_signal, disturbance):
+    def compute_plant_output(self, controller_params, disturbance, compute_control_signal):
+        control_signal = compute_control_signal(controller_params, self.target - self.H)
         volume_change = control_signal + disturbance - self.Q
         water_height_change = volume_change / self.A
         # TODO check if this should be + or -
         self.H += water_height_change
-        # print(self.H)
-        # TODO check + or - here output er H
-        error = self.target - self.H
-        return error
+        return self.H

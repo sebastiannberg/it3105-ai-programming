@@ -11,7 +11,7 @@ if config.PLANT == "bathtub":
     plant = BathtubModel(A=config.CROSS_SECTIONAL_AREA_BATHTUB, C=config.CROSS_SECTIONAL_AREA_DRAIN, target=config.INITIAL_HEIGHT_BATHTUB_WATER)
 
 if config.CONTROLLER == "classic":
-    controller = ClassicPIDController()
+    controller = ClassicPIDController(learning_rate=config.LEARNING_RATE)
 
 
 consys = Consys(controller=controller,
