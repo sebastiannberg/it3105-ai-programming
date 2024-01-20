@@ -1,21 +1,16 @@
 from controllers.base_controller import BaseController
 import numpy as np
+import jax.numpy as jnp
 
 
 class ClassicPIDController(BaseController):
-
-    def __init__(self, learning_rate) -> None:
-        self.learning_rate = learning_rate
         
     def init_params(self):
         # kp, ki and kd
-        self.params = np.array([0.1, 0.01, 0.001])
+        return np.array([0.1, 0.01, 0.001])
 
-    def compute_control_signal(self, controller_params, error):
-        if not self.plant_history:
+    def compute_control_signal(self, params, state):
+        if not error_history:
             # First iteration of the controller, control signal is zero
-            return 0
-        return np.dot(controller_params, [error, sum(self.error_history), (error - self.error_history[-1])])
-
-    def update_params(self, loss_gradient: callable, controller_params, disturbance, compute_control_signal, plant_history):
-        self.params -= self.learning_rate * loss_gradient(controller_params, disturbance, compute_control_signal, plant_history)
+            return 0.0
+        return jnp.dot(controller_params, jnp.array([incoming_error, jnp.sum(jnp.array(error_history)), incoming_error - error_history[-1]]))

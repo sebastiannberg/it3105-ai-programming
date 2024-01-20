@@ -9,33 +9,22 @@ class BaseController(ABC):
         Initialize the controller parameters.
         """
         pass
+    
+    # def init_state_history(self):
+    #     """
+    #     """
+    #     self.state_history = []
 
-    @abstractmethod
-    def update_params(self, loss_gradient):
-        """
-        Update the controller parameters based on the gradient.
-        """
-        pass
-
-    def init_error_history(self):
-        """
-        """
-        self.error_history = []
-
-    def save_error(self, error):
-        self.error_history.append(error)
-
-    def init_plant_history(self):
-        """
-        Initialize the plant history.
-        """
-        # TODO maybe jnp array for calculating gradients
-        self.plant_history = []
-
-    def save_plant_output(self, compute_plant_output: callable):
-        """
-        Save the plant output in the plant history.
-        """
-        # TODO Seems like it is not saved as a callable when trying to call func in mse function
-        self.plant_history.append(compute_plant_output)
-        return compute_plant_output
+    # # TODO try to only use error history
+    # def save_state(self, timestep, incoming_error, disturbance, plant_output, outgoing_error, error_history):
+    #     """
+    #     Save the state of the system.
+    #     """
+    #     self.state_history.append({
+    #         'timestep': timestep,
+    #         'incoming_error': incoming_error,
+    #         'disturbance': disturbance,
+    #         'plant_output': plant_output,
+    #         'outgoing_error': outgoing_error,
+    #         'error_history': error_history
+    #     })
