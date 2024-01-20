@@ -15,7 +15,7 @@ class Consys:
         self.timesteps = timesteps
         self.disturbance_range = disturbance_range
     
-    def run_system(self, epochs):
+    def run_system(self, epochs, timesteps):
         gradient_function = jax.value_and_grad(self.run_system_one_epoch)
         # Init params
         params = self.controller.init_params()
@@ -25,22 +25,34 @@ class Consys:
             state = {
                 "current_error": 0,
                 "error_history": [],
-                "control_signal": 0
+                "control_signal": 0,
+                # Set plant output to 0, it is updated first hand
+                "plant_output": 0
             }
+            plant_state = self.plant.get_state()
+            for variable_tuple in plant_state:
+                state[variable_tuple[0]] = variable_tuple[1]
+            
+            print(state)
+
+            self.plant.A = 10000
+
+            print(state)
+
             # Executing run_system_one_epoch via jax gradient function
-            mse, gradient = gradient_function(params, state)
+            mse, gradient = gradient_function(params, state, timesteps)
 
             # update_params(params, gradient)
     
-    def run_system_one_epoch(self, params, state):
+    def run_system_one_epoch(self, params, state, timesteps):
         # Generate disturbance vector
-        disturbance_vector = np.random.uniform(*self.disturbance_range, size=self.timesteps)
-        for t in range(self.timesteps):
-            self.run_system_one_timestep(params, state, disturbance_vector[t])
+        disturbance_vector = np.random.uniform(*self.disturbance_range, size=timesteps)
+        for t in range(timesteps):
+            state = self.run_system_one_timestep(params, state, disturbance_vector[t])
 
     def run_system_one_timestep(self, params, state, disturbance):
-        self.run_plant_one_timestep(params, state, disturbance)
-        self.run_controller_one_timestep(params, state)
+        state = self.run_plant_one_timestep(params, state, disturbance)
+        state = self.run_controller_one_timestep(params, state)
 
     def run_plant_one_timestep(self, params, state, disturbance):
         pass

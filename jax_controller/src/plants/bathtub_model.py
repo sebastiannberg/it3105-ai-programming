@@ -5,6 +5,7 @@ from math import sqrt
 class BathtubModel(BasePlant):
 
     def __init__(self, A, C, target) -> None:
+        self.save_init_state()
         self.A = A
         self.C = C
         self.H = target
@@ -12,14 +13,28 @@ class BathtubModel(BasePlant):
         self.Q = self.V * self.C
         self.target = target
     
-    def get_state(self):
-        pass
+    # TODO create private funcs for update V and update Q
+    
+    def get_init_state(self):
+        # TODO return the init_state dict instead
+        return [
+            ("A", self.A),
+            ("C", self.C),
+            ("H", self.target),
+            ("V", self.V),
+            ("Q", self.Q),
+            ("target", self.target),
+        ]
 
-    def save_init_state(self):
+    def save_init_state(self, A, C, H, target):
         """
         TODO save the initial state of the model to a dictionary and call this inside constructor
         """
-        pass
+        self.init_state = {
+            "A": A,
+            "C": C,
+            "H": H...
+        }
 
     def reset_plant(self):
         # self.H = self.target
