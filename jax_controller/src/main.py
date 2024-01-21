@@ -27,6 +27,7 @@ if config.CONTROLLER == "classic":
 
 consys = Consys(controller=controller,
                 plant=plant,
+                learning_rate=config.LEARNING_RATE,
                 disturbance_range=config.DISTURBANCE_RANGE)
 consys.run_system(epochs=config.NUM_EPOCHS,
                   timesteps=config.NUM_TIMESTEPS)

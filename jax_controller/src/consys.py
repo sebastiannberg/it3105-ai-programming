@@ -8,15 +8,18 @@ from controllers.classic_pid_controller import ClassicPIDController
 
 class Consys:
 
-    def __init__(self, controller: ClassicPIDController, plant, disturbance_range) -> None:
+    def __init__(self, controller: ClassicPIDController, plant, learning_rate, disturbance_range) -> None:
         self.controller = controller
         self.plant = plant
+        self.learning_rate = learning_rate
         self.disturbance_range = disturbance_range
     
     def run_system(self, epochs, timesteps):
         gradient_function = jax.value_and_grad(self.run_system_one_epoch)
         # Init params
         params = self.controller.init_params()
+
+        mse_history = []
 
         for _ in range(epochs):
             # Init system state (error history and plant state)
@@ -39,8 +42,14 @@ class Consys:
             mse, gradient = gradient_function(params, state, timesteps)
 
             print(mse, gradient)
-
+            mse_history.append((mse, gradient))
             # update_params(params, gradient) Update parameters based on the gradient
+            params = self.update_params(params, gradient)
+
+
+
+        print([float(entry[0]) for entry in mse_history])
+        print(params)
     
     def run_system_one_epoch(self, params, state, timesteps):
         # Generate disturbance vector
@@ -70,6 +79,11 @@ class Consys:
         # Update controller
         state = self.controller.update_controller(params, state)
         return state
+    
+    def update_params(self, params, gradient):
+        params -= self.learning_rate * gradient
+        return params
+
     
     # # TODO edit this, now we have state history
     # def mse(self, controller_params, error_history, disturbance_vector):
