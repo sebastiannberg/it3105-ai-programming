@@ -19,5 +19,8 @@ INITIAL_HEIGHT_BATHTUB_WATER = 5
 MAXIMUM_PRICE_COURNOT = 3
 MARGINAL_COST_COURNOT = 0.1
 TARGET_COURNOT = 0.55
+# TODO enforce q1 and q2 restriction in all code between 0 and 1
+INITIAL_Q1_COURNOT = 0.4 # Options: 0 < q1 < 1
+INITIAL_Q2_COURNOT = 0.7 # Options: 0 < q2 < 1
 
 # TODO add at least two parameters for third plant

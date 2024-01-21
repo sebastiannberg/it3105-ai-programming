@@ -6,6 +6,7 @@ import jax.numpy as jnp
 class BathtubModel(BasePlant):
 
     def __init__(self, init_plant_state: dict) -> None:
+        # TODO check for valid dict, does it contain the necessary keys? throw error if not
         self.init_plant_state = init_plant_state
     
     def get_init_plant_state(self):

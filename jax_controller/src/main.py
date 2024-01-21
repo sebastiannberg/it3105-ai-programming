@@ -26,18 +26,16 @@ elif config.PLANT == "cournot":
         "max_price": config.MAXIMUM_PRICE_COURNOT,
         "marginal_cost": config.MARGINAL_COST_COURNOT,
         "target": config.TARGET_COURNOT,
-        # TODO add these to config
-        "q1": 0.5,
-        "q2": 0.5,
-        "q": 0.5 + 0.5,
-        "price": config.MAXIMUM_PRICE_COURNOT - (0.5 + 0.5),
-        "producer_one_profit": 0.5 * ((config.MAXIMUM_PRICE_COURNOT - (0.5 + 0.5)) * config.MARGINAL_COST_COURNOT)
+        "q1": config.INITIAL_Q1_COURNOT,
+        "q2": config.INITIAL_Q2_COURNOT,
+        "q": config.INITIAL_Q1_COURNOT + config.INITIAL_Q2_COURNOT,
+        "price": config.MAXIMUM_PRICE_COURNOT - (config.INITIAL_Q1_COURNOT + config.INITIAL_Q2_COURNOT),
+        "producer_one_profit": config.INITIAL_Q1_COURNOT * (config.MAXIMUM_PRICE_COURNOT - (config.INITIAL_Q1_COURNOT + config.INITIAL_Q2_COURNOT) - config.MARGINAL_COST_COURNOT)
     }
     plant = CournotModel(init_plant_state=init_plant_state)
 
 if config.CONTROLLER == "classic":
     controller = ClassicPIDController()
-
 
 consys = Consys(controller=controller,
                 plant=plant,
