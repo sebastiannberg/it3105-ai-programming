@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 
 class BasePlant(ABC):
 
+    # TODO find out this class, what should be generalized
+
     def __init__(self) -> None:
         super().__init__()
 

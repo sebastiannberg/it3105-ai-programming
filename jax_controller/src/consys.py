@@ -35,19 +35,14 @@ class Consys:
             init_plant_state = self.plant.get_init_plant_state()
             # Add init plant state to the system state dictionary
             state.update(init_plant_state)
-            
-            print(state)
 
             # Executing run_system_one_epoch via jax gradient function
             mse, gradient = gradient_function(params, state, timesteps)
-
             print(mse, gradient)
             mse_history.append((mse, gradient))
-            # update_params(params, gradient) Update parameters based on the gradient
+            # Update parameters based on the gradient
             params = self.update_params(params, gradient)
-
-
-
+            
         print([float(entry[0]) for entry in mse_history])
         print(params)
     
