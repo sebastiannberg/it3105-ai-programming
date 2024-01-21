@@ -8,7 +8,7 @@ class ClassicPIDController(BaseController):
     def init_params(self):
         # kp, ki and kd
         # TODO maybe jnp.array
-        return np.array([0.1, 0.01, 0.001])
+        return np.array([0.1, 0.1, 0.01])
     
     def update_controller(self, params, state):
         if not state["error_history"]:

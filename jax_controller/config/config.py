@@ -1,4 +1,4 @@
-PLANT = "bathtub" # Options: "bathtub", "cournot", "insert name model 3"
+PLANT = "cournot" # Options: "bathtub", "cournot", "insert name model 3"
 
 CONTROLLER = "classic" # Options: "classic", "ai"
 
@@ -7,16 +7,17 @@ NUM_HIDDEN_LAYERS = 2
 NEURONS_PER_LAYER = 128
 INITIAL_WEIGHT_BIAS_RANGE = (0, 1) # TODO Check if this is correct interpretation of the task description
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 50
 NUM_TIMESTEPS = 50
 LEARNING_RATE = 0.01
-DISTURBANCE_RANGE = (-0.01, 0.01) # TODO Check if this is correct interpretation and what should the values be?
+DISTURBANCE_RANGE = (-0.01, 0.01)
 
 CROSS_SECTIONAL_AREA_BATHTUB = 10
 CROSS_SECTIONAL_AREA_DRAIN = CROSS_SECTIONAL_AREA_BATHTUB / 100
 INITIAL_HEIGHT_BATHTUB_WATER = 5
 
-MAXIMUM_PRICE_COURNOT = 100
-MARGINAL_COST_COURNOT = 20
+MAXIMUM_PRICE_COURNOT = 3
+MARGINAL_COST_COURNOT = 0.1
+TARGET_COURNOT = 0.55
 
 # TODO add at least two parameters for third plant
