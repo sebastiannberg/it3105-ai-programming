@@ -8,11 +8,9 @@ from controllers.classic_pid_controller import ClassicPIDController
 
 class Consys:
 
-    def __init__(self, controller: ClassicPIDController, plant, epochs, timesteps, disturbance_range) -> None:
+    def __init__(self, controller: ClassicPIDController, plant, disturbance_range) -> None:
         self.controller = controller
         self.plant = plant
-        self.epochs = epochs
-        self.timesteps = timesteps
         self.disturbance_range = disturbance_range
     
     def run_system(self, epochs, timesteps):
@@ -21,44 +19,57 @@ class Consys:
         params = self.controller.init_params()
 
         for _ in range(epochs):
-            # Init state (error history and plant state)
+            # Init system state (error history and plant state)
             state = {
-                "current_error": 0,
                 "error_history": [],
-                "control_signal": 0,
-                # Set plant output to 0, it is updated first hand
-                "plant_output": 0
+                # Assuming plant start in ideal state
+                "current_error": 0.0,
+                # Set control signal to 0 initially, it is updated first hand
+                "control_signal": 0.0,
+                # Set plant output to 0 initially, it is updated first hand
+                "plant_output": 0.0
             }
-            plant_state = self.plant.get_state()
-            for variable_tuple in plant_state:
-                state[variable_tuple[0]] = variable_tuple[1]
+            init_plant_state = self.plant.get_init_plant_state()
+            # Add init plant state to the system state dictionary
+            state.update(init_plant_state)
             
-            print(state)
-
-            self.plant.A = 10000
-
             print(state)
 
             # Executing run_system_one_epoch via jax gradient function
             mse, gradient = gradient_function(params, state, timesteps)
 
-            # update_params(params, gradient)
+            print(mse, gradient)
+
+            # update_params(params, gradient) Update parameters based on the gradient
     
     def run_system_one_epoch(self, params, state, timesteps):
         # Generate disturbance vector
         disturbance_vector = np.random.uniform(*self.disturbance_range, size=timesteps)
         for t in range(timesteps):
             state = self.run_system_one_timestep(params, state, disturbance_vector[t])
+        # Return the MSE over the error history
+        mse = jnp.mean(jnp.array([error**2 for error in state["error_history"]]))
+        return mse
 
     def run_system_one_timestep(self, params, state, disturbance):
-        state = self.run_plant_one_timestep(params, state, disturbance)
+        state = self.run_plant_one_timestep(state, disturbance)
         state = self.run_controller_one_timestep(params, state)
+        # Save error in error history
+        state["error_history"].append(state["current_error"])
+        return state
 
-    def run_plant_one_timestep(self, params, state, disturbance):
-        pass
+    def run_plant_one_timestep(self, state, disturbance):
+        # Update plant
+        print("before run plant")
+        print(state)
+        state = self.plant.update_plant(state, disturbance)
+        print("after", state)
+        return state
 
     def run_controller_one_timestep(self, params, state):
-        pass
+        # Update controller
+        state = self.controller.update_controller(params, state)
+        return state
     
     # # TODO edit this, now we have state history
     # def mse(self, controller_params, error_history, disturbance_vector):
