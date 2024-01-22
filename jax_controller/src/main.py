@@ -9,6 +9,7 @@ from consys import Consys
 from plants.bathtub_model import BathtubModel
 from plants.cournot_model import CournotModel
 from controllers.classic_pid_controller import ClassicPIDController
+from controllers.ai_pid_controller import AIPIDController
 
 
 if config.PLANT == "bathtub":
@@ -36,6 +37,11 @@ elif config.PLANT == "cournot":
 
 if config.CONTROLLER == "classic":
     controller = ClassicPIDController()
+elif config.CONTROLLER == "ai":
+    controller = AIPIDController(activation_function=config.ACTIVATION_FUNCTION,
+                                 num_hidden_layers=config.NUM_HIDDEN_LAYERS,
+                                 neurons_per_layer=config.NEURONS_PER_LAYER,
+                                 initial_weight_bias_range=config.INITIAL_WEIGHT_BIAS_RANGE)
 
 consys = Consys(controller=controller,
                 plant=plant,
