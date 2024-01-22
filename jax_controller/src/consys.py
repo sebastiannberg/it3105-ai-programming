@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 # TODO wrong typing, should be base
 from controllers.classic_pid_controller import ClassicPIDController
+from visualization.plotting import Plotting
 
 
 class Consys:
@@ -13,12 +14,13 @@ class Consys:
         self.plant = plant
         self.learning_rate = learning_rate
         self.disturbance_range = disturbance_range
+        self.plotting = Plotting()
     
     def run_system(self, epochs, timesteps):
         gradient_function = jax.value_and_grad(self.run_system_one_epoch)
         # Init params
         params = self.controller.init_params()
-        for _ in range(epochs):
+        for epoch in range(epochs):
             # Init system state (error history and plant state)
             state = {
                 "error_history": [],
@@ -38,7 +40,12 @@ class Consys:
             print(mse, gradient)
             # Update parameters based on the gradient
             params = self.update_params(params, gradient)
-    
+
+            if isinstance(self.controller, ClassicPIDController):
+                self.plotting.add(epoch=epoch, mse=mse, kp=params[0], ki=params[1], kd=params[2])
+            # TODO if isintance ai controller add only epoch and mse to plotting
+        self.plotting.plot_mse_and_params()
+
     def run_system_one_epoch(self, params, state, timesteps):
         # Generate disturbance vector
         disturbance_vector = np.random.uniform(*self.disturbance_range, size=timesteps)
