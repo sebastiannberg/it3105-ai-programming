@@ -9,6 +9,7 @@ from visualization.plotting import Plotting
 
 class Consys:
 
+    # TODO wrong typing for controller, should be the base class
     def __init__(self, controller: ClassicPIDController, plant, learning_rate, disturbance_range) -> None:
         self.controller = controller
         self.plant = plant

@@ -6,9 +6,16 @@ import jax.numpy as jnp
 class BathtubModel(BasePlant):
 
     def __init__(self, init_plant_state: dict) -> None:
-        # TODO check for valid dict, does it contain the necessary keys? throw error if not
-        self.init_plant_state = init_plant_state
+        if self.check_valid_init_state(init_plant_state):
+            self.init_plant_state = init_plant_state
     
+    def check_valid_init_state(self, init_plant_state):
+        required_keys = ("A", "C", "H", "V", "Q", "target")
+        if not all(key in init_plant_state for key in required_keys):
+            missing_keys = [key for key in required_keys if key not in init_plant_state]
+            raise ValueError(f"Missing keys in init_plant_state: {missing_keys}")
+        return True
+
     def get_init_plant_state(self):
         return self.init_plant_state
 
