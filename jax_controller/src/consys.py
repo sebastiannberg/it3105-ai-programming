@@ -4,6 +4,7 @@ import jax.numpy as jnp
 
 # TODO wrong typing, should be base
 from controllers.classic_pid_controller import ClassicPIDController
+from controllers.ai_pid_controller import AIPIDController
 from visualization.plotting import Plotting
 
 
@@ -38,13 +39,15 @@ class Consys:
 
             # Executing run_system_one_epoch via jax gradient function
             mse, gradient = gradient_function(params, state, timesteps)
-            print(mse, gradient)
+            print("==MSE AND GRADIENT==\n", mse, "\n", gradient, "\n\n\n")
             # Update parameters based on the gradient
             params = self.update_params(params, gradient)
 
             if isinstance(self.controller, ClassicPIDController):
                 self.plotting.add(epoch=epoch, mse=mse, kp=params[0], ki=params[1], kd=params[2])
-            # TODO if isintance ai controller add only epoch and mse to plotting
+            elif isinstance(self.controller, AIPIDController):
+                self.plotting.add(epoch=epoch, mse=mse)
+            
         self.plotting.plot_mse_and_params()
 
     def run_system_one_epoch(self, params, state, timesteps):
@@ -75,5 +78,11 @@ class Consys:
     
     def update_params(self, params, gradient):
         # Gradient descent
-        params -= self.learning_rate * gradient
-        return params
+        if isinstance(self.controller, ClassicPIDController):
+            params -= self.learning_rate * gradient
+        elif isinstance(self.controller, AIPIDController):
+            new_params = []
+            for layer, layer_gradient in zip(params, gradient):
+                layer -= self.learning_rate * layer_gradient
+                new_params.append(layer)
+        return new_params

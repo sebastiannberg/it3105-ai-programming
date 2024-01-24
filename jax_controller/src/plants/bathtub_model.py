@@ -1,6 +1,7 @@
 from plants.base_plant import BasePlant
 
 import jax.numpy as jnp
+import jax
 
 
 class BathtubModel(BasePlant):
@@ -29,4 +30,5 @@ class BathtubModel(BasePlant):
         state["Q"] = state["V"] * state["C"]
         state["plant_output"] = state["H"]
         state["current_error"] = state["target"] - state["plant_output"]
+        # jax.debug.print("current error {x}", x=state["current_error"])
         return state

@@ -42,7 +42,7 @@ class Plotting:
             # Or else the titles of the two plots are overlapping
             plt.tight_layout()
         else:
-            plt.figure(figsize=(6,5))
+            plt.figure(figsize=(7,5))
             plt.plot(self.epochs, self.mse_history, label="MSE")
             plt.xlabel("Epoch")
             plt.ylabel("MSE")
