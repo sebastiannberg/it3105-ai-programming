@@ -80,9 +80,10 @@ class Consys:
         # Gradient descent
         if isinstance(self.controller, ClassicPIDController):
             params -= self.learning_rate * gradient
+            return params
         elif isinstance(self.controller, AIPIDController):
             new_params = []
             for layer, layer_gradient in zip(params, gradient):
                 layer -= self.learning_rate * layer_gradient
                 new_params.append(layer)
-        return new_params
+            return new_params

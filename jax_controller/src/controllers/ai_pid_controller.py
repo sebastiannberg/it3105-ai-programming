@@ -54,7 +54,6 @@ class AIPIDController(BaseController):
     
     def compute_layer_output(self, layer_params, input):
         try:
-            print(layer_params.shape, input.shape)
             # Do not include bias when multiplying the weights, add it afterwards
             result = jnp.dot(layer_params[:, :-1], input) + jnp.reshape(layer_params[:, -1], (-1, 1)) # Reshape bias before adding
             # Apply activation function
