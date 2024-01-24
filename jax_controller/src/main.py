@@ -36,6 +36,7 @@ elif config.PLANT == "cournot":
     plant = CournotModel(init_plant_state=init_plant_state)
 
 if config.CONTROLLER == "classic":
+    # TODO add input for kp ki and kd initial, from config file
     controller = ClassicPIDController()
 elif config.CONTROLLER == "ai":
     controller = AIPIDController(activation_function=config.ACTIVATION_FUNCTION,

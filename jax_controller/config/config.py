@@ -1,6 +1,6 @@
 PLANT = "bathtub" # Options: "bathtub", "cournot", "insert name model 3"
 
-CONTROLLER = "ai" # Options: "classic", "ai"
+CONTROLLER = "classic" # Options: "classic", "ai"
 
 ACTIVATION_FUNCTION = "sigmoid" # Options: "sigmoid", "tanh", "relu"
 NUM_HIDDEN_LAYERS = 2 # Options: 0, 1, 2, 3, 4, 5
