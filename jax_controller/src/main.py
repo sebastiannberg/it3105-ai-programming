@@ -8,6 +8,7 @@ import config.config as config
 from consys import Consys
 from plants.bathtub_model import BathtubModel
 from plants.cournot_model import CournotModel
+from plants.population_model import PopulationModel
 from controllers.classic_pid_controller import ClassicPIDController
 from controllers.ai_pid_controller import AIPIDController
 
@@ -34,6 +35,14 @@ elif config.PLANT == "cournot":
         "producer_one_profit": config.INITIAL_Q1_COURNOT * (config.MAXIMUM_PRICE_COURNOT - (config.INITIAL_Q1_COURNOT + config.INITIAL_Q2_COURNOT) - config.MARGINAL_COST_COURNOT)
     }
     plant = CournotModel(init_plant_state=init_plant_state)
+elif config.PLANT == "population":
+    init_plant_state = {
+        "P": config.INITIAL_POPULATION,
+        "r": config.GROWTH_RATE,
+        "K": config.CARRYING_CAPACITY,
+        "target": config.TARGET_POPULATION
+    }
+    plant = PopulationModel(init_plant_state=init_plant_state)
 
 if config.CONTROLLER == "classic":
     # TODO add input for kp ki and kd initial, from config file

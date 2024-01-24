@@ -1,4 +1,4 @@
-PLANT = "bathtub" # Options: "bathtub", "cournot", "insert name model 3"
+PLANT = "population" # Options: "bathtub", "cournot", "insert name model 3"
 
 CONTROLLER = "classic" # Options: "classic", "ai"
 
@@ -10,7 +10,7 @@ INITIAL_WEIGHT_BIAS_RANGE = (-1, 1)
 NUM_EPOCHS = 20
 NUM_TIMESTEPS = 25
 LEARNING_RATE = 0.1
-DISTURBANCE_RANGE = (-0.01, 0.01)
+DISTURBANCE_RANGE = (-10, 10)
 
 CROSS_SECTIONAL_AREA_BATHTUB = 10
 CROSS_SECTIONAL_AREA_DRAIN = CROSS_SECTIONAL_AREA_BATHTUB / 100
@@ -23,3 +23,7 @@ INITIAL_Q1_COURNOT = 0.4 # Options: 0 < Q1 < 1
 INITIAL_Q2_COURNOT = 0.7 # Options: 0 < Q2 < 1
 
 # TODO add at least two parameters for third plant
+INITIAL_POPULATION = 200
+GROWTH_RATE = 0.05
+CARRYING_CAPACITY = 2000
+TARGET_POPULATION = 1500
