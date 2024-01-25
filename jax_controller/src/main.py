@@ -43,7 +43,15 @@ elif config.PLANT == "population":
         "target": config.TARGET_POPULATION
     }
     plant = PopulationModel(init_plant_state=init_plant_state)
-
+elif config.PLANT == "rabbit":
+    init_plant_state = {
+        "P": config.INITIAL_POPULATION,
+        "r": config.GROWTH_RATE,
+        "K": config.CARRYING_CAPACITY,
+        "PC": config.PREDATOR_CONTROL,
+        "target": config.TARGET_POPULATION
+    }
+    plant = PopulationModel(init_plant_state=init_plant_state)
 if config.CONTROLLER == "classic":
     # TODO add input for kp ki and kd initial, from config file
     controller = ClassicPIDController()
