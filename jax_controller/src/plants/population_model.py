@@ -34,7 +34,7 @@ class PopulationModel(BasePlant):
         state["plant_output"] = state["P"]
         # Update current_error
         state["current_error"] = state["target"] - state["plant_output"]
-        jax.debug.print("Prey Population: {x}", x=state["P"])
-        jax.debug.print("Predator Population: {x}", x=state["PP"])
-        jax.debug.print("Error: {x}\n", x=state["current_error"])
+        # jax.debug.print("Prey Population: {x}", x=state["P"])
+        # jax.debug.print("Predator Population: {x}", x=state["PP"])
+        # jax.debug.print("Error: {x}\n", x=state["current_error"])
         return state
