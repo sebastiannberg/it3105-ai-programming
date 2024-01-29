@@ -43,21 +43,25 @@ class AIPIDController(BaseController):
         else:
             input = jnp.array([state["current_error"], jnp.sum(jnp.array(state["error_history"])), state["current_error"] - state["error_history"][-1]]).reshape(3,1)
         
-        for layer in params:
+        # Compute hidden layers (with activation function)
+        for layer in params[:-1]:
             output = self.compute_layer_output(layer, input)
             # Update input for the next iteration
             input = output
+        # Compute output layer (without activation function)
+        output = self.compute_layer_output(params[-1], input, use_activation_func=False)
 
         # Update control_signal after neural network is done
         state["control_signal"] = output[0, 0]
         return state
     
-    def compute_layer_output(self, layer_params, input):
+    def compute_layer_output(self, layer_params, input, use_activation_func=True):
         try:
             # Do not include bias when multiplying the weights, add it afterwards
             result = jnp.dot(layer_params[:, :-1], input) + jnp.reshape(layer_params[:, -1], (-1, 1)) # Reshape bias before adding
-            # Apply activation function
-            result = self.activation_function(result)
+            if use_activation_func:
+                # Apply activation function
+                result = self.activation_function(result)
             return result
 
         except ValueError as e:

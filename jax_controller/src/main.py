@@ -9,7 +9,6 @@ from consys import Consys
 from plants.bathtub_model import BathtubModel
 from plants.cournot_model import CournotModel
 from plants.population_model import PopulationModel
-from plants.rabbit_model import RabbitPopulationModel
 from controllers.classic_pid_controller import ClassicPIDController
 from controllers.ai_pid_controller import AIPIDController
 
