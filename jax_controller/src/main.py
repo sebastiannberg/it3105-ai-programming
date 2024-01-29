@@ -39,24 +39,19 @@ elif config.PLANT == "cournot":
 elif config.PLANT == "population":
     init_plant_state = {
         "P": config.INITIAL_POPULATION,
-        "r": config.GROWTH_RATE,
-        "K": config.CARRYING_CAPACITY,
-        "target": config.TARGET_POPULATION
+        "target": config.TARGET_POPULATION,
+        "PP": config.INITIAL_PREDATOR_POPULATION,
+        "prey_growth_rate": config.PREY_GROWTH_RATE,
+        "predation_rate": config.PREDATION_RATE,
+        "predator_mortality_rate": config.PREDATOR_MORTALITY_RATE,
+        "predator_growth_rate": config.PREDATOR_GROWTH_RATE
     }
     plant = PopulationModel(init_plant_state=init_plant_state)
-elif config.PLANT == "rabbit":
-    init_plant_state = {
-        "P": config.INITIAL_POPULATION,
-        "r": config.GROWTH_RATE,
-        "K": config.CARRYING_CAPACITY,
-        "PC": config.PREDATOR_CONTROL,
-        "target": config.TARGET_POPULATION
-    }
-    plant = RabbitPopulationModel(init_plant_state=init_plant_state)
 
 if config.CONTROLLER == "classic":
-    # TODO add input for kp ki and kd initial, from config file
-    controller = ClassicPIDController()
+    controller = ClassicPIDController(kp=config.INITIAL_KP,
+                                      ki=config.INITIAL_KI,
+                                      kd=config.INITIAL_KD)
 elif config.CONTROLLER == "ai":
     controller = AIPIDController(activation_function=config.ACTIVATION_FUNCTION,
                                  num_hidden_layers=config.NUM_HIDDEN_LAYERS,

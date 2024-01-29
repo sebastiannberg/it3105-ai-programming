@@ -1,15 +1,19 @@
-PLANT = "population" # Options: "bathtub", "cournot", "insert name model 3"
+PLANT = "population" # Options: "bathtub", "cournot", "population"
 
 CONTROLLER = "classic" # Options: "classic", "ai"
 
+INITIAL_KP = 0.2 # Options: float
+INITIAL_KI = 0.01 # Options: float
+INITIAL_KD = 0.1 # Options: float
+
 ACTIVATION_FUNCTION = "sigmoid" # Options: "sigmoid", "tanh", "relu"
 NUM_HIDDEN_LAYERS = 2 # Options: 0, 1, 2, 3, 4, 5
-NEURONS_PER_LAYER = [124, 64] # Options: Must correspond with NUM_HIDDEN_LAYERS
+NEURONS_PER_LAYER = [128, 64] # Options: Length must correspond with NUM_HIDDEN_LAYERS
 INITIAL_WEIGHT_BIAS_RANGE = (-1, 1)
 
-NUM_EPOCHS = 20
-NUM_TIMESTEPS = 25
-LEARNING_RATE = 0.1
+NUM_EPOCHS = 30
+NUM_TIMESTEPS = 50
+LEARNING_RATE = 0.0000001
 DISTURBANCE_RANGE = (-10, 10)
 
 CROSS_SECTIONAL_AREA_BATHTUB = 10
@@ -22,8 +26,11 @@ TARGET_COURNOT = 0.55
 INITIAL_Q1_COURNOT = 0.4 # Options: 0 < Q1 < 1
 INITIAL_Q2_COURNOT = 0.7 # Options: 0 < Q2 < 1
 
-# TODO add at least two parameters for third plant
+# TODO add at least two parameters for third plant (ADD OPTIONS:)
 INITIAL_POPULATION = 200
-GROWTH_RATE = 0.05
-CARRYING_CAPACITY = 2000
-TARGET_POPULATION = 1500
+TARGET_POPULATION = 300
+INITIAL_PREDATOR_POPULATION = 600
+PREY_GROWTH_RATE = 0.4
+PREDATION_RATE = 0.001
+PREDATOR_MORTALITY_RATE = 0.1
+PREDATOR_GROWTH_RATE = 0.0005
