@@ -1,19 +1,19 @@
 PLANT = "population" # Options: "bathtub", "cournot", "population"
 
-CONTROLLER = "classic" # Options: "classic", "ai"
+CONTROLLER = "ai" # Options: "classic", "ai"
 
 INITIAL_KP = 0.1 # Options: float
 INITIAL_KI = 0.1 # Options: float
 INITIAL_KD = 0.1 # Options: float
 
-ACTIVATION_FUNCTION = "sigmoid" # Options: "sigmoid", "tanh", "relu"
-NUM_HIDDEN_LAYERS = 2 # Options: 0, 1, 2, 3, 4, 5
-NEURONS_PER_LAYER = [64, 32] # Options: Length must correspond with NUM_HIDDEN_LAYERS
-INITIAL_WEIGHT_BIAS_RANGE = (-0.01, 0.01)
+ACTIVATION_FUNCTION = "relu" # Options: "sigmoid", "tanh", "relu"
+NUM_HIDDEN_LAYERS = 3 # Options: 0, 1, 2, 3, 4, 5
+NEURONS_PER_LAYER = [64, 64, 32] # Options: Length must correspond with NUM_HIDDEN_LAYERS
+INITIAL_WEIGHT_BIAS_RANGE = (-0.1, 0.1)
 
 NUM_EPOCHS = 50
 NUM_TIMESTEPS = 50
-LEARNING_RATE = 0.00001
+LEARNING_RATE = 0.0001
 DISTURBANCE_RANGE = (-1, 1)
 
 CROSS_SECTIONAL_AREA_BATHTUB = 10
