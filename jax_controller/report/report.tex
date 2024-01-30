@@ -1,0 +1,69 @@
+% Setup and frequently used packages
+\documentclass[12pt]{article}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{parskip} % Remove indent of new paragraph
+\usepackage{titling}
+\usepackage{graphicx} % To include graphics such as pictures
+\usepackage{amsmath}
+\usepackage{caption} % Used to allow empty captions for figures
+
+% Setup title/author/date
+\title{Jax Controller Report}
+\author{Group 128}
+\date{}
+
+% References
+\usepackage{hyperref} % Correct formatting for urls in references
+\usepackage[style=apa]{biblatex}
+\addbibresource{references.bib}
+
+% Header
+\usepackage{fancyhdr}
+\pagestyle{fancyplain}
+\fancyhf{}
+\lhead{\theauthor}
+\chead{}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\plainheadrulewidth}{0.4pt}
+
+
+\begin{document}
+\maketitle
+
+\section*{Conclusion}
+
+Initial weight parameters was set using Python's random library. The weights were set to a random number within the interval $[0,1)$.
+
+
+\begin{verbatim}
+Training set MSE: 0.0392
+Test set MSE: 0.0399
+\end{verbatim}
+
+The result above was obtained with a learning rate of 0.001 and 1000 epochs. 
+
+\begin{verbatim}
+Training set MSE: 0.0504
+Test set MSE: 0.0517
+\end{verbatim}
+
+The result above was obtained after setting the amount of epochs to 100 instead of 1000. Still using a learning rate of 0.001.
+
+\begin{verbatim}
+Training set MSE: 0.0389
+Test set MSE: 0.0383
+\end{verbatim}
+
+The best results was obtained with a learning rate of 0.05 and 1000 epochs. Slightly better than a learning rate of
+0.001
+
+\section*{Lotka-Volterra Population Plant}
+
+
+
+\printbibliography
+
+\end{document}

@@ -24,7 +24,9 @@ class CournotModel(BasePlant):
 
     def update_plant(self, state, disturbance):
         state["q1"] += state["control_signal"]
+        state["q1"] = max(0.0, min(state["q1"], 1.0))
         state["q2"] += disturbance
+        state["q2"] = max(0.0, min(state["q2"], 1.0))
         state["q"] = state["q1"] + state["q2"]
         state["price"] = state["max_price"] - state["q"]
         state["producer_one_profit"] = state["q1"] * (state["price"] - state["marginal_cost"])
