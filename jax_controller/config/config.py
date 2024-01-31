@@ -1,4 +1,4 @@
-PLANT = "cournot" # Options: "bathtub", "cournot", "population"
+PLANT = "population" # Options: "bathtub", "cournot", "population"
 
 CONTROLLER = "ai" # Options: "classic", "ai"
 
@@ -9,12 +9,12 @@ INITIAL_KD = 0.1 # Options: float
 ACTIVATION_FUNCTION = "relu" # Options: "sigmoid", "tanh", "relu"
 NUM_HIDDEN_LAYERS = 3 # Options: 0, 1, 2, 3, 4, 5
 NEURONS_PER_LAYER = [64, 64, 32] # Options: Length must correspond with NUM_HIDDEN_LAYERS
-INITIAL_WEIGHT_BIAS_RANGE = (-0.001, 0.001)
+INITIAL_WEIGHT_BIAS_RANGE = (-0.1, 0.1)
 
-NUM_EPOCHS = 30
-NUM_TIMESTEPS = 30
+NUM_EPOCHS = 50
+NUM_TIMESTEPS = 50
 LEARNING_RATE = 0.0001
-DISTURBANCE_RANGE = (-0.02, 0.02)
+DISTURBANCE_RANGE = (-1, 1)
 
 CROSS_SECTIONAL_AREA_BATHTUB = 10
 CROSS_SECTIONAL_AREA_DRAIN = CROSS_SECTIONAL_AREA_BATHTUB / 100

@@ -141,40 +141,106 @@ it is more important to consider current error and the differentiation of error 
 \end{center}
 
 The error for this run starts at 0.04. This is a lot higher than 0.007 which is the starting error for the classic
-controller when controlling this plant.
+controller when controlling this plant. However, it quickly declines the first 5 epochs, and there is a tendency for declinig
+further, but at a slower rate with more disturbances. It performs slightly worse than the classic controller, but it also has
+30 epochs instead of 50.
 
 \section*{Population Plant - Classic Controller}
 
+\begin{tabular}{|l|l|}
+    \hline
+    \textbf{Parameter}   & \textbf{Value}\\ \hline
+    Epochs               & 50            \\ \hline
+    Timesteps            & 50            \\ \hline
+    Learning Rate        & 0.00001          \\ \hline
+    Disturbance Range    & (-1, 1) \\ \hline
+    Initial $K_p$           & 0.1           \\ \hline
+    Initial $K_i$           & 0.1           \\ \hline
+    Initial $K_d$           & 0.1           \\ \hline
+    Initial Prey Population                    & 90            \\ \hline
+    Target Prey Population & 100             \\ \hline
+    Initial Predator Population                    & 30           \\ \hline
+    Prey Growth Rate & 0.2             \\ \hline
+    Predation Rate & 0.01             \\ \hline
+    Predator Growth Rate & 0.002             \\ \hline
+    Predator Mortality Rate & 0.2             \\ \hline
+\end{tabular}
+
+\begin{center}
+    \includegraphics[width=0.8\linewidth]{figures/population-classic.png}
+\end{center}
+
+After the first epoch we can see that the error increases. After that it stabilizes again and decrease. There is a lot
+of disturbance, and that makes sense given that the mathematical model in this plant is oscilating. The first $K_i$ value
+seems to be decreasing too much, and after that it increases. $K_p$ is initially too low.
+
 \section*{Population Plant - AI Controller}
 
+\begin{tabular}{|l|l|}
+    \hline
+    \textbf{Parameter}   & \textbf{Value}\\ \hline
+    Epochs               & 50            \\ \hline
+    Timesteps            & 50            \\ \hline
+    Learning Rate        & 0.0001          \\ \hline
+    Disturbance Range    & (-1, 1) \\ \hline
+    Number of Hidden Layers           & 3           \\ \hline
+    Neurons per Layer           & [64, 64, 32]           \\ \hline
+    Initial Weight/Bias Range           & (-0.1, 0.1)           \\ \hline
+    Activation Function                    & relu            \\ \hline
+    Initial Prey Population                    & 90            \\ \hline
+    Target Prey Population & 100             \\ \hline
+    Initial Predator Population                    & 30           \\ \hline
+    Prey Growth Rate & 0.2             \\ \hline
+    Predation Rate & 0.01             \\ \hline
+    Predator Growth Rate & 0.002             \\ \hline
+    Predator Mortality Rate & 0.2             \\ \hline
+\end{tabular}
 
+\begin{center}
+    \includegraphics[width=0.8\linewidth]{figures/population-ai.png}
+\end{center}
 
+The error is very high after the first epoch. This might be because of the randomly initialized parameters in the neural
+network. Error rapidly decreases for the first few epochs. And continue to decrease after that. Better initializing of weights
+and biases could lead to a better result. Also when inspecting the gradients it seems like some of the weights are not changed
+much.
 
-\begin{verbatim}
-Training set MSE: 0.0392
-Test set MSE: 0.0399
-\end{verbatim}
-
-The result above was obtained with a learning rate of 0.001 and 1000 epochs. 
-
-\begin{verbatim}
-Training set MSE: 0.0504
-Test set MSE: 0.0517
-\end{verbatim}
-
-The result above was obtained after setting the amount of epochs to 100 instead of 1000. Still using a learning rate of 0.001.
-
-\begin{verbatim}
-Training set MSE: 0.0389
-Test set MSE: 0.0383
-\end{verbatim}
-
-The best results was obtained with a learning rate of 0.05 and 1000 epochs. Slightly better than a learning rate of
-0.001
-
+\clearpage
 \section*{Population Plant Description}
 
-This plant is based on Lotka-Volterra equations, which are used to model population oscillations in ecological systems.
+This plant is based on Lotka-Volterra equations, which are used to model population oscillations in ecological systems. The basic
+idea is that the population of prey and predator will follow each other. When prey population increases, the predator population
+will also increase after some time, and vice versa.
+
+The equations are a pair of first order non linear differential equations. 
+
+\begin{align}
+    \frac{dx}{dt} &= \alpha x - \beta xy \\
+    \frac{dy}{dt} &= \delta xy - \gamma y
+\end{align}
+
+Equation 1 is the change in prey population and equation 2 is the change in predator population. $\alpha$ represents the grotwh
+rate of prey. $\beta$ represents the preation rate, whihc says something about the effect of predators on prey population.
+
+$\delta$ is the predator growth rate and $\gamma$ is the predator mortality rate.
+
+The solution to these differential equations is the trivial solution when x and y is both 0, and the solutions
+
+
+\begin{equation}
+    \{ y = \frac{\alpha}{\beta}, x = \frac{\gamma}{\delta}\}
+\end{equation}
+
+This is the equilibrium state, which means that if x and y is initially set to these values, they will not change.
+
+In our plant we want to control the prey population, so we introduce the control signal $U$ to the change in x.
+
+We also introduce noise to the predator population. Thus the new equations for change in populations become
+
+\begin{align}
+    \frac{dx}{dt} &= \alpha x - \beta xy + U \\
+    \frac{dy}{dt} &= \delta xy - \gamma y + D
+\end{align}
 
 
 \printbibliography
