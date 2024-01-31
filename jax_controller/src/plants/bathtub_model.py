@@ -31,5 +31,4 @@ class BathtubModel(BasePlant):
         state["plant_output"] = state["H"]
         # Update current_error
         state["current_error"] = state["target"] - state["plant_output"]
-        # jax.debug.print("current error {x}", x=state["current_error"])
         return state

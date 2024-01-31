@@ -3,14 +3,26 @@ from abc import ABC, abstractmethod
 
 class BasePlant(ABC):
 
-    # TODO find out this class, what should be generalized
+    @abstractmethod
+    def check_valid_init_state(self, init_plant_state: dict):
+        """
+        Returns True if the dictionary contains the necessary keys for this plant
+        to work properly.
+        """
+        pass
 
-    def __init__(self) -> None:
-        super().__init__()
+    @abstractmethod
+    def get_init_plant_state(self):
+        """
+        Returns the dictionary containing the initial plant state variables.
+        """
+        pass
 
-    # @abstractmethod
-    # def reset_plant(self):
-    #     """
-    #     Reset plant to initial state.
-    #     """
-    #     pass
+    @abstractmethod
+    def update_plant(self, state: dict, disturbance):
+        """
+        Updates the plant based on the state dictionary. The values in state is modified
+        and returned when done.
+        """
+        pass
+

@@ -2,7 +2,8 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 
-# TODO wrong typing, should be base
+from plants.base_plant import BasePlant
+from controllers.base_controller import BaseController
 from controllers.classic_pid_controller import ClassicPIDController
 from controllers.ai_pid_controller import AIPIDController
 from visualization.plotting import Plotting
@@ -11,7 +12,7 @@ from visualization.plotting import Plotting
 class Consys:
 
     # TODO wrong typing for controller, should be the base class
-    def __init__(self, controller: ClassicPIDController, plant, learning_rate, disturbance_range) -> None:
+    def __init__(self, controller: BaseController, plant: BasePlant, learning_rate, disturbance_range) -> None:
         self.controller = controller
         self.plant = plant
         self.learning_rate = learning_rate
