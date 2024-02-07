@@ -11,14 +11,13 @@ from visualization.plotting import Plotting
 
 class Consys:
 
-    # TODO wrong typing for controller, should be the base class
     def __init__(self, controller: BaseController, plant: BasePlant, learning_rate, disturbance_range) -> None:
         self.controller = controller
         self.plant = plant
         self.learning_rate = learning_rate
         self.disturbance_range = disturbance_range
         self.plotting = Plotting()
-    
+
     def run_system(self, epochs, timesteps):
         gradient_function = jax.value_and_grad(self.run_system_one_epoch)
         # Init params
@@ -48,7 +47,7 @@ class Consys:
                 self.plotting.add(epoch=epoch, mse=mse, kp=params[0], ki=params[1], kd=params[2])
             elif isinstance(self.controller, AIPIDController):
                 self.plotting.add(epoch=epoch, mse=mse)
-            
+
         self.plotting.plot_mse_and_params()
 
     def run_system_one_epoch(self, params, state, timesteps):
@@ -76,7 +75,7 @@ class Consys:
         # Update controller
         state = self.controller.update_controller(params, state)
         return state
-    
+
     def update_params(self, params, gradient):
         # Gradient descent
         if isinstance(self.controller, ClassicPIDController):
