@@ -1,5 +1,5 @@
-from utils.deck import Deck
-from utils.card import Card
+from games.poker.utils.deck import Deck
+from games.poker.utils.card import Card
 
 
 class PokerOracle:
@@ -8,8 +8,7 @@ class PokerOracle:
         pass
 
     def gen_deck(self, num_cards: int):
-        rest = num_cards % 4
-        if rest:
+        if num_cards % 4:
             raise ValueError(f"The number of cards must be divisible evenly by 4 to form a complete deck but was {num_cards}")
         num_ranks = int(num_cards / 4)
         if num_ranks < 5:

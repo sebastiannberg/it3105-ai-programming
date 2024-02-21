@@ -1,4 +1,4 @@
-from poker_state import PokerState
+from games.poker.poker_state import PokerState
 
 
 class PokerGame:

@@ -1,6 +1,7 @@
 import random
 from typing import List
-from utils.card import Card
+
+from games.poker.utils.card import Card
 
 class Deck:
 
