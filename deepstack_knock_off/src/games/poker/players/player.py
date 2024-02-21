@@ -9,7 +9,7 @@ class Player:
         self.name: str = name
         self.hand: List[Card] = []
         self.chips: int = initial_chips
-        self.pot_contribution = 0
+        self.player_bet = 0
 
     def receive_cards(self, *cards: Card):
         self.hand.extend(cards)

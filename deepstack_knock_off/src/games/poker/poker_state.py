@@ -9,12 +9,14 @@ from games.poker.utils.card import Card
 
 @dataclass
 class PokerState:
+    # TODO update typing remove union
     game_players: List[Union[AIPlayer, HumanPlayer]]
     round_players: List[Union[AIPlayer, HumanPlayer]]
     deck: Deck
     stage: str
     public_cards: List[Card]
     pot: int
+    current_bet: int
     small_blind_amount: int
     big_blind_amount: int
     small_blind_player: Union[AIPlayer, HumanPlayer]
