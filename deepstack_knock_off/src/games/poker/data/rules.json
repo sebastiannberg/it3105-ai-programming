@@ -1,6 +1,7 @@
 {
     "num_ai_players": 1,
     "num_human_players": 1,
+    "initial_chips": 100,
     "deck_size": 52,
     "small_blind_amount": 2,
     "big_blind_amount": 4,

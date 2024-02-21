@@ -1,6 +1,6 @@
 
 
-class Action:
+class Call:
 
     def __init__(self):
         pass
