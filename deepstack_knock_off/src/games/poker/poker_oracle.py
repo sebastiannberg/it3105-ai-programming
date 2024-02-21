@@ -1,3 +1,23 @@
+from utils.deck import Deck
+from utils.card import Card
 
 
-# TODO needs to keep track of deck size
+class PokerOracle:
+
+    def __init__(self):
+        pass
+
+    def gen_deck(self, num_cards: int):
+        rest = num_cards % 4
+        if rest:
+            raise ValueError(f"The number of cards must be divisible evenly by 4 to form a complete deck but was {num_cards}")
+        num_ranks = int(num_cards / 4)
+        if num_ranks < 5:
+            raise ValueError(f"The number of ranks need to be at least 5 but was {num_ranks}")
+        ranks = ("A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2")
+        suits = ("spades", "hearts", "diamonds", "clubs")
+        cards = []
+        for rank in ranks[:num_ranks]:
+            for suit in suits:
+                cards.append(Card(rank, suit))
+        return Deck(cards)
