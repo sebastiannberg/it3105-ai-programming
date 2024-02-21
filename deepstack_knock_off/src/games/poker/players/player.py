@@ -1,11 +1,13 @@
 from typing import List
-from utils.card import Card
-from actions.action import Action
+
+from games.poker.utils.card import Card
+from games.poker.actions.action import Action
 
 
 class Player:
 
-    def __init__(self, initial_chips, possible_actions):
+    def __init__(self, name, initial_chips, possible_actions):
+        self.name = name
         self.hand: List[Card] = []
         self.chips: int = initial_chips
         self.possible_actions: List[Action] = possible_actions

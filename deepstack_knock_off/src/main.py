@@ -13,7 +13,8 @@ json_file_path = os.path.join(current_dir, "games", "poker", "data", "rules.json
 
 with open(json_file_path) as f:
     rules = json.load(f)
-    print(rules)
 
 poker_oracle = PokerOracle()
 poker_game_manager = PokerGameManager(rules, poker_oracle)
+poker_game_manager.init_poker_game()
+print(poker_game_manager.game.state)

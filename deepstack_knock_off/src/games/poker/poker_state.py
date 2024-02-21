@@ -9,15 +9,13 @@ from games.poker.utils.card import Card
 
 @dataclass
 class PokerState:
-
-    def __init__(self):
-        self.players: List[Union[AIPlayer, HumanPlayer]]
-        self.deck: Deck
-        self.stage: str
-        self.public_cards: List[Card]
-        self.pot: int
-        self.small_blind_amount: int
-        self.big_blind_amount: int
-        self.small_blind_player: Union[AIPlayer, HumanPlayer]
-        self.big_blind_player: Union[AIPlayer, HumanPlayer]
-        self.current_player: Union[AIPlayer, HumanPlayer]
+    players: List[Union[AIPlayer, HumanPlayer]]
+    deck: Deck
+    stage: str
+    public_cards: List[Card]
+    pot: int
+    small_blind_amount: int
+    big_blind_amount: int
+    small_blind_player: Union[AIPlayer, HumanPlayer]
+    big_blind_player: Union[AIPlayer, HumanPlayer]
+    active_player: Union[AIPlayer, HumanPlayer]
