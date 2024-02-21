@@ -9,7 +9,8 @@ from games.poker.utils.card import Card
 
 @dataclass
 class PokerState:
-    players: List[Union[AIPlayer, HumanPlayer]]
+    game_players: List[Union[AIPlayer, HumanPlayer]]
+    round_players: List[Union[AIPlayer, HumanPlayer]]
     deck: Deck
     stage: str
     public_cards: List[Card]
