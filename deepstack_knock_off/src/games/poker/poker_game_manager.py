@@ -50,7 +50,11 @@ class PokerGameManager:
 
 
     def perform_blind_bets(self):
-        pass
+        current_small_blind_player = self.game.state.small_blind_player
+        current_big_blind_player = self.game.state.big_blind_player
+        if not current_small_blind_player or not current_big_blind_player:
+            raise ValueError("Either small blind or big blind is not assigned to a player")
+        # TODO
 
     def deal_cards(self):
         stage = self.game.state.stage
@@ -63,7 +67,10 @@ class PokerGameManager:
         elif stage == "river":
             pass
 
-    def gen_all_available_actions(self, player: Player):
+    def assign_active_player(self):
+        pass
+
+    def find_all_legal_actions(self, player: Player):
         # return a list of all possible actions for the player given the player and the state
         # fold (always possible)
         # raise (always possible if have the money)
