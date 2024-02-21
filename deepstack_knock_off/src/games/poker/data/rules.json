@@ -1,0 +1,11 @@
+{
+    "num_ai_players": 1,
+    "num_human_players": 1,
+    "deck_size": 52,
+    "small_blind_amount": 2,
+    "big_blind_amount": 4,
+    "fixed_raise": 4,
+    "max_num_raises_per_stage": 2,
+    "all_in_enabled": false,
+    "max_pot_size": 20
+}
