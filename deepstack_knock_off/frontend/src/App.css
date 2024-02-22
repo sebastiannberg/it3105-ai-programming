@@ -1,13 +1,13 @@
 .App {
-  background-color: #35654d;
-  color: white;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  min-width: 100vw;
+    background-image: linear-gradient(to bottom, #541b1b, #380909, #230606);
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-width: 100vw;
 }
 
 .setup-box {
@@ -37,4 +37,70 @@
 
 .poker-button:hover {
     background-color: darkgreen;
+}
+
+.board-page {
+    max-height: 100%;
+}
+
+.board-page > * {
+    margin: 20px;
+}
+
+.game-board-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 1fr auto 1fr;
+    justify-items: center;
+    align-items: center;
+}
+
+.game-board-container > * {
+    margin: 10px;
+}
+
+.game-board {
+    grid-column: 2;
+    grid-row: 2;
+    width: 900px;
+    height: 600px;
+    min-width: 40vw;
+    min-height: 30vh;
+    max-width: 60vw;
+    max-height: 50vh;
+    background-color: #35654d;
+    border-radius: 150px;
+    border-style: double;
+    border-color: #2a3d34;
+    border-width: 7px;
+}
+
+.player {
+    text-align: left;
+}
+
+.top-players {
+    width: 100%;
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    justify-content: space-around; /* Adjust based on the number of top players */
+}
+
+.bottom-players {
+    width: 100%;
+    grid-column: 2;
+    grid-row: 3;
+    display: flex;
+    justify-content: space-around; /* Adjust based on the number of bottom players */
+}
+
+.left-player {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.right-player {
+    grid-column: 3;
+    grid-row: 2;
 }
