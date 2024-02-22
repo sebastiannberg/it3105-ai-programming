@@ -8,6 +8,7 @@ class PokerOracle:
         pass
 
     def gen_deck(self, num_cards: int):
+        print("hello")
         if num_cards % 4:
             raise ValueError(f"The number of cards must be divisible evenly by 4 to form a complete deck but was {num_cards}")
         num_ranks = int(num_cards / 4)
