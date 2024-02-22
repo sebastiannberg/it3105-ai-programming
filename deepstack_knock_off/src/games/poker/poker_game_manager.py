@@ -2,9 +2,9 @@ from typing import Dict
 
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
+from games.poker.poker_state import PokerState
 from games.poker.players.ai_player import AIPlayer
 from games.poker.players.human_player import HumanPlayer
-from games.poker.actions.action import Action
 from games.poker.actions.raise_bet import RaiseBet
 
 
@@ -19,7 +19,7 @@ class PokerGameManager:
         deck.shuffle()
         players = self.gen_poker_players(num_ai_players=self.rules["num_ai_players"], num_human_players=self.rules["num_human_players"])
         init_state = PokerStateManager.gen_init_state(players, deck, self.rules["small_blind_amount"], self.rules["big_blind_amount"])
-        self.game = init_state
+        self.game: PokerState = init_state
 
     def gen_poker_players(self, num_ai_players, num_human_players):
         if num_ai_players + num_human_players > 6:
@@ -67,8 +67,8 @@ class PokerGameManager:
         small_blind_action = RaiseBet(player=current_small_blind_player, raise_amount=self.game.small_blind_amount)
         big_blind_action = RaiseBet(player=current_big_blind_player, raise_amount=self.game.big_blind_amount)
 
-        self.apply_action(small_blind_action)
-        self.apply_action(big_blind_action)
+        PokerStateManager.apply_action(self.game, small_blind_action)
+        PokerStateManager.apply_action(self.game, big_blind_action)
 
     def deal_cards(self):
         stage = self.game.stage

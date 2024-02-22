@@ -46,6 +46,5 @@ class PokerStateManager:
             state.pot += action.raise_amount
             action.player.chips -= action.raise_amount
             action.player.player_bet += action.raise_amount
-
             # Ensure current_bet reflects the highest current bet
             state.current_bet = max(state.current_bet, action.player.player_bet)

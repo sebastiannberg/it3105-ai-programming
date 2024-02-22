@@ -1,26 +1,30 @@
-import json
 import random
-import os
 
 from games.poker.poker_game_manager import PokerGameManager
-from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
 
 random.seed(123)
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-json_file_path = os.path.join(current_dir, "games", "poker", "data", "rules.json")
-
-with open(json_file_path) as f:
-    rules = json.load(f)
+rules = {
+    "num_ai_players": 1,
+    "num_human_players": 1,
+    "initial_chips": 100,
+    "deck_size": 52,
+    "small_blind_amount": 2,
+    "big_blind_amount": 4,
+    "fixed_raise": 4,
+    "max_num_raises_per_stage": 4,
+    "all_in_disabled": True,
+    "max_pot_size": 20
+}
 
 poker_oracle = PokerOracle()
 poker_game_manager = PokerGameManager(rules, poker_oracle)
 poker_game_manager.init_poker_game()
-print(poker_game_manager.game.state)
+print(poker_game_manager.game)
 poker_game_manager.assign_blind_roles()
-print(poker_game_manager.game.state.big_blind_player)
+print(poker_game_manager.game.big_blind_player)
 poker_game_manager.perform_blind_bets()
-print(poker_game_manager.game.state.pot)
-print(poker_game_manager.game.state.current_bet)
-print(poker_game_manager.game.state.big_blind_player.chips)
+print(poker_game_manager.game.pot)
+print(poker_game_manager.game.current_bet)
+print(poker_game_manager.game.big_blind_player.chips)
