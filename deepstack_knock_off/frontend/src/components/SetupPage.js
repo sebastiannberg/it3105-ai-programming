@@ -9,7 +9,7 @@ const SetupPage = () => {
   const fetchRules = async () => {
     try {
       const response = await axios.get("http://127.0.0.1:5000/rules");
-      setRules(JSON.stringify(response.data, null, 2)); // Format with newlines and indentation
+      setRules(JSON.stringify(response.data, null, 4));
     } catch (error) {
       console.error('Failed to fetch rules:', error);
     }

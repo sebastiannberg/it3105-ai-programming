@@ -30,10 +30,10 @@ class PokerGameManager:
         initial_chips = self.rules["initial_chips"]
         # Generate AI players
         for i in range(num_ai_players):
-            players.append(AIPlayer(name=f"AI Player {i}", initial_chips=initial_chips))
+            players.append(AIPlayer(name=f"AI Player {i+1}", initial_chips=initial_chips))
         # Generate human players
         for i in range(num_human_players):
-            players.append(HumanPlayer(name=f"Human Player {i}", initial_chips=initial_chips))
+            players.append(HumanPlayer(name=f"Human Player {i+1}", initial_chips=initial_chips))
         return players
 
     def assign_blind_roles(self):
@@ -71,15 +71,81 @@ class PokerGameManager:
         PokerStateManager.apply_action(self.game, big_blind_action)
 
     def deal_cards(self):
-        stage = self.game.stage
-        if stage == "preflop":
+        if self.game.stage == "preflop":
             pass
-        elif stage == "flop":
+        elif self.game.stage == "flop":
             pass
-        elif stage == "turn":
+        elif self.game.stage == "turn":
             pass
-        elif stage == "river":
+        elif self.game.stage == "river":
             pass
 
     def assign_active_player(self):
         pass
+
+    def jsonify_poker_game(self):
+        if self.game.game_players:
+            game_players_dict = {}
+            for player in self.game.game_players:
+                game_players_dict[player.name] = {
+                    "hand": [{"rank": card.rank, "suit": card.suit} for card in player.hand],
+                    "chips": player.chips,
+                    "player_bet": player.player_bet
+                }
+        else:
+            game_players_dict = None
+
+        if self.game.round_players:
+            round_players_dict = {}
+            for player in self.game.round_players:
+                round_players_dict[player.name] = {
+                    "hand": [{"rank": card.rank, "suit": card.suit} for card in player.hand],
+                    "chips": player.chips,
+                    "player_bet": player.player_bet
+                }
+        else:
+            round_players_dict = None
+
+        if self.game.deck:
+            deck_dict = {"cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.deck.cards]}
+        else:
+            deck_dict = None
+
+        if self.game.small_blind_player and self.game.big_blind_player:
+            small_blind_player_dict = {self.game.small_blind_player.name: {
+                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.small_blind_player.hand],
+                "chips": self.game.small_blind_player.chips,
+                "player_bet": self.game.small_blind_player.player_bet
+            }}
+            big_blind_player_dict = {self.game.big_blind_player.name: {
+                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.big_blind_player.hand],
+                "chips": self.game.big_blind_player.chips,
+                "player_bet": self.game.big_blind_player.player_bet
+            }}
+        else:
+            small_blind_player_dict = None
+            big_blind_player_dict = None
+
+        if self.game.active_player:
+            active_player_dict = {self.game.active_player.name: {
+                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.active_player.hand],
+                "chips": self.game.active_player.chips,
+                "player_bet": self.game.active_player.player_bet
+            }}
+        else:
+            active_player_dict = None
+
+        return {
+            "game_players": game_players_dict,
+            "round_players": round_players_dict,
+            "deck": deck_dict,
+            "stage": self.game.stage,
+            "public_cards": [(card.rank, card.suit) for card in self.game.public_cards],
+            "pot": self.game.pot,
+            "current_bet": self.game.current_bet,
+            "small_blind_amount": self.game.small_blind_amount,
+            "big_blind_amount": self.game.big_blind_amount,
+            "small_blind_player": small_blind_player_dict,
+            "big_blind_player": big_blind_player_dict,
+            "active_player": active_player_dict
+        }

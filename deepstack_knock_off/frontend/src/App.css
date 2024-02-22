@@ -31,5 +31,10 @@
     border-radius: 10px;
     border-style: none;
     padding: 15px;
-    font-weight: bold; /* Add this line to make the text bold */
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.poker-button:hover {
+    background-color: darkgreen;
 }
