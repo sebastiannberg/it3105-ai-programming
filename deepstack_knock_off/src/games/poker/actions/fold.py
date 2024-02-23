@@ -6,3 +6,4 @@ class Fold(Action):
 
     def __init__(self, player: Player):
         self.player = player
+        super().__init__(name="Fold")

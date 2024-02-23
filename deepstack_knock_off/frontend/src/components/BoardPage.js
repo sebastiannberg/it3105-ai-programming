@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import GameBoard from './GameBoard';
-import ActionRow from './ActionRow';
+import ActionSection from './ActionSection';
+import Player from './Player';
 
 
 const BoardPage = () => {
@@ -20,12 +21,29 @@ const BoardPage = () => {
     fetchGameState()
   }, []);
 
+  const playerEntries = gameState.round_players ? Object.entries(gameState.round_players) : [];
+
+  const renderPlayers = (playerArray) => playerArray.map(([playerName, playerDetails]) => (
+    <Player
+      key={playerName}
+      name={playerName}
+      chips={playerDetails.chips}
+      hand={playerDetails.hand}
+      bet={playerDetails.player_bet}
+    />
+  ));
 
   return(
     <div className='board-page'>
-      <h1>{gameState.active_player ? Object.keys(gameState.active_player)[0] + "'s turn" : "no current player"}</h1>
-      <GameBoard gameState={gameState} />
-      <ActionRow />
+      <div className='player-section'>
+        <h1>Players</h1>
+        {renderPlayers(playerEntries)}
+      </div>
+      <div className='board-section'>
+        <h1>{gameState.active_player ? Object.keys(gameState.active_player)[0] + "'s turn" : "no current player"}</h1>
+        <GameBoard gameState={gameState} />
+      </div>
+      <ActionSection gameState={gameState} />
     </div>
   )
 };

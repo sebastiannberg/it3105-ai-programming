@@ -4,6 +4,7 @@ from games.poker.players.player import Player
 from games.poker.poker_state import PokerState
 from games.poker.actions.action import Action
 from games.poker.actions.raise_bet import RaiseBet
+from games.poker.actions.fold import Fold
 
 
 class PokerStateManager:
@@ -27,13 +28,16 @@ class PokerStateManager:
         return init_state
 
     @staticmethod
-    def find_all_legal_actions(state: PokerState, player: Player):
+    def find_all_legal_actions(state: PokerState, player: Player, json: bool):
         # return a list of all possible actions for the player given the player and the state
         # fold (always possible)
         # raise (always possible if have the money) remember rules and fixed amount
         # check (if possible)
         # rules for all in enabled
-        pass
+        # if check is not available, then call is available and vice versa
+        legal_actions = []
+        legal_actions.append(Fold(player))
+        return legal_actions
 
     @staticmethod
     def apply_action(state: PokerState, action: Action):
@@ -43,8 +47,8 @@ class PokerStateManager:
         """
         if isinstance(action, RaiseBet):
             # Update pot and player state
-            state.pot += action.raise_amount
-            action.player.chips -= action.raise_amount
-            action.player.player_bet += action.raise_amount
+            state.pot += action.chip_cost
+            action.player.chips -= action.chip_cost
+            action.player.player_bet += action.chip_cost
             # Ensure current_bet reflects the highest current bet
             state.current_bet = max(state.current_bet, action.player.player_bet)

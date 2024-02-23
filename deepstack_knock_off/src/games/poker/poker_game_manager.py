@@ -23,7 +23,7 @@ class PokerGameManager:
 
     def gen_poker_players(self, num_ai_players, num_human_players):
         if num_ai_players + num_human_players > 6:
-            raise ValueError("Total amount of players should be less than 6")
+            raise ValueError("Total amount of players should be less than or equal to 6")
         if num_ai_players + num_human_players < 2:
             raise ValueError("Total amount of players should be at least 2")
         players = []
@@ -64,10 +64,20 @@ class PokerGameManager:
         if not current_small_blind_player or not current_big_blind_player:
             raise ValueError("Either small blind or big blind is not assigned to a player")
 
-        small_blind_action = RaiseBet(player=current_small_blind_player, raise_amount=self.game.small_blind_amount)
-        big_blind_action = RaiseBet(player=current_big_blind_player, raise_amount=self.game.big_blind_amount)
-
+        # Small blind action
+        raise_amount = (current_small_blind_player.player_bet + self.game.small_blind_amount) - self.game.current_bet
+        small_blind_action = RaiseBet(player=current_small_blind_player,
+                                      chip_cost=self.game.small_blind_amount,
+                                      raise_amount=raise_amount,
+                                      raise_type="small_blind")
         PokerStateManager.apply_action(self.game, small_blind_action)
+
+        # Big blind action
+        raise_amount = (current_big_blind_player.player_bet + self.game.big_blind_amount) - self.game.current_bet
+        big_blind_action = RaiseBet(player=current_big_blind_player,
+                                    chip_cost=self.game.big_blind_amount,
+                                    raise_amount=raise_amount,
+                                    raise_type="big_blind")
         PokerStateManager.apply_action(self.game, big_blind_action)
 
     def deal_cards(self):

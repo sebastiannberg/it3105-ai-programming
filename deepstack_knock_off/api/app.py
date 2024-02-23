@@ -8,6 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from games.poker.poker_game_manager import PokerGameManager
+from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
 
 app = Flask(__name__)
@@ -46,6 +47,18 @@ def game_state():
         return jsonify(game_state_json), 200
     else:
         return jsonify({"error": "Game not started."}), 404
+
+@app.route("/legal-actions", methods=["GET"])
+def legal_action():
+    serialized_game_manager = cache.get("game_manager")
+    if serialized_game_manager:
+        game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
+        current_state = game_manager.game
+        current_player = game_manager.game.active_player
+        legal_actions = PokerStateManager.find_all_legal_actions(state=current_state, player=current_player, json=True)
+        return jsonify(legal_actions), 200
+    else:
+        return jsonify({"error": "Failed to fetch possible actions"}), 404
 
 if __name__ == "__main__":
     app.run(debug=True)
