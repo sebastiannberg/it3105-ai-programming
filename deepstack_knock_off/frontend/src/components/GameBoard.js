@@ -1,7 +1,7 @@
 import Player from "./Player";
 
 const GameBoard = ({ gameState }) => {
-  const playerEntries = gameState.game_players ? Object.entries(gameState.game_players) : [];
+  const playerEntries = gameState.round_players ? Object.entries(gameState.round_players) : [];
 
   const positions = {
     topPlayers: [],

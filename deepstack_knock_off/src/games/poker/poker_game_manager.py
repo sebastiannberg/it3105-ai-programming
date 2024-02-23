@@ -72,7 +72,9 @@ class PokerGameManager:
 
     def deal_cards(self):
         if self.game.stage == "preflop":
-            pass
+            for player in self.game.round_players:
+                cards = self.game.deck.deal_cards(num_cards=2)
+                player.receive_cards(*cards)
         elif self.game.stage == "flop":
             pass
         elif self.game.stage == "turn":
@@ -81,7 +83,10 @@ class PokerGameManager:
             pass
 
     def assign_active_player(self):
-        pass
+        current_big_blind_player = self.game.big_blind_player
+        big_blind_index = self.game.round_players.index(current_big_blind_player)
+        next_player_index = (big_blind_index + 1) % len(self.game.round_players)
+        self.game.active_player = self.game.round_players[next_player_index]
 
     def jsonify_poker_game(self):
         if self.game.game_players:

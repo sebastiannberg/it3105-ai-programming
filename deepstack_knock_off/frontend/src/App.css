@@ -1,5 +1,5 @@
 .App {
-    background-image: linear-gradient(to bottom, #541b1b, #380909, #230606);
+    background-image: radial-gradient(circle, #851010 25%, #360406 95%);
     color: white;
     text-align: center;
     display: flex;
@@ -76,6 +76,17 @@
 }
 
 .player {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.player > * {
+    margin: 0 5px;
+}
+
+.player-info {
     text-align: left;
 }
 
@@ -103,4 +114,29 @@
 .right-player {
     grid-column: 3;
     grid-row: 2;
+}
+
+.card {
+    height: 90%;
+    width: 45px;
+    color: black;
+    background-color: white;
+    border-radius: 5px;
+}
+
+.card-rank {
+    text-align: left;
+    padding-left: 3px;
+}
+
+.red-rank {
+    color: red;
+}
+
+.black-rank {
+    color: black;
+}
+
+.card-suit {
+    height: 25px;
 }
