@@ -1,4 +1,5 @@
 import Player from "./Player";
+import Card from "./Card";
 
 const GameBoard = ({ gameState }) => {
   const playerEntries = gameState.round_players ? Object.entries(gameState.round_players) : [];
@@ -56,10 +57,22 @@ const GameBoard = ({ gameState }) => {
     />
   ));
 
+  const publicCards = gameState.public_cards ? (
+    gameState.public_cards.map((card, index) => (
+      <Card key={index} rank={card.rank} suit={card.suit} />
+    ))
+  ) : null;
+
   return (
     <div className="game-board-container">
       <div className="top-players">{renderPlayers(positions.topPlayers, "top-player")}</div>
-      <div className="game-board"></div>
+      <div className="game-board">
+        <div>
+          <p>Total Pot: {gameState.pot}</p>
+          <p>Current Bet: {gameState.current_bet}</p>
+        </div>
+        <p>{publicCards}</p>
+      </div>
       <div className="left-player">{renderPlayers(positions.leftPlayer, "left-player")}</div>
       <div className="right-player">{renderPlayers(positions.rightPlayer, "right-player")}</div>
       <div className="bottom-players">{renderPlayers(positions.bottomPlayers, "bottom-player")}</div>

@@ -76,11 +76,11 @@ class PokerGameManager:
                 cards = self.game.deck.deal_cards(num_cards=2)
                 player.receive_cards(*cards)
         elif self.game.stage == "flop":
-            pass
-        elif self.game.stage == "turn":
-            pass
-        elif self.game.stage == "river":
-            pass
+            cards = self.game.deck.deal_cards(num_cards=3)
+            self.game.public_cards.extend(cards)
+        elif self.game.stage == "turn" or self.game.stage == "river":
+            cards = self.game.deck.deal_cards(num_cards=1)
+            self.game.public_cards.extend(cards)
 
     def assign_active_player(self):
         current_big_blind_player = self.game.big_blind_player

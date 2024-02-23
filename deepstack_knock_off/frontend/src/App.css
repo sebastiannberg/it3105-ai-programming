@@ -73,6 +73,10 @@
     border-style: double;
     border-color: #2a3d34;
     border-width: 7px;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    justify-items: center;
+    align-items: center;
 }
 
 .player {
