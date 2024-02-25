@@ -19,6 +19,8 @@ const ActionPane = ({ gameState }) => {
     setSelectedAction(null);
   };
 
+  const buttonClass = selectedAction ? "poker-button" : "poker-button disabled";
+
   return (
     <div className="action-pane">
       <div className="scroll-box">
@@ -33,7 +35,7 @@ const ActionPane = ({ gameState }) => {
           ))}
         </ul>
       </div>
-      <button className="poker-button" onClick={applySelectedAction}>Apply</button>
+      <button className={buttonClass} onClick={applySelectedAction} disabled={!selectedAction}>Apply</button>
     </div>
   );
 };
