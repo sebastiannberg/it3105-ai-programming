@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import GameBoard from './GameBoard';
-import ActionSection from './ActionSection';
+import ActionPane from './ActionPane';
 import Player from './Player';
 
 
@@ -43,7 +43,10 @@ const BoardPage = () => {
         <h1>{gameState.active_player ? Object.keys(gameState.active_player)[0] + "'s turn" : "no current player"}</h1>
         <GameBoard gameState={gameState} />
       </div>
-      <ActionSection gameState={gameState} />
+      <div className='action-section'>
+        <h1>Actions</h1>
+        <ActionPane gameState={gameState} />
+      </div>
     </div>
   )
 };

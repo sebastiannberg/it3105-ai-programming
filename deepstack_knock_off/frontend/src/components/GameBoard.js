@@ -1,4 +1,3 @@
-import Player from "./Player";
 import Card from "./Card";
 
 const GameBoard = ({ gameState }) => {

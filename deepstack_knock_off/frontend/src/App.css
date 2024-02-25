@@ -45,8 +45,8 @@
     min-height: 100vh;
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr; /* Adjust the fr units as needed to control the width of each section */
-    grid-template-rows: auto; /* This will make the row height adjust to the content */
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: auto;
   }
 
 .board-section {
@@ -56,9 +56,14 @@
     align-items: center;
 }
 
+.board-section > h1 {
+    margin-bottom: 30px;
+}
+
 .game-board {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
     justify-content: center;
     align-items: center;
     width: 700px;
@@ -124,4 +129,72 @@
 
 .card-suit {
     height: 25px;
+}
+
+.action-section {
+    margin-top: 30px;
+    margin-left: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.action-section > * {
+    margin-bottom: 20px;
+}
+
+.scroll-box {
+    width: 300px;
+    height: 250px;
+    overflow-y: scroll;
+    background-color: white;
+    border: 5px solid #ddd;
+}
+
+.scroll-box::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scroll-box::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
+.scroll-box::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+    border: 2px solid #f0f0f0;
+}
+
+.scroll-box ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.scroll-box li {
+    color: black;
+    padding: 5px;
+}
+
+.scroll-box li:not(:last-child) {
+    border-bottom: 1px solid #ccc;
+}
+
+.scroll-box li:last-child {
+    border-bottom: 1px solid #ccc;
+}
+
+.scroll-box li:first-child {
+    border-top: 1px solid #ccc;
+}
+
+.action-item {
+    cursor: pointer;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.action-item.selected {
+    background-color: #f0f0f0;
 }
