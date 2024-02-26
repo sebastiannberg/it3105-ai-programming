@@ -13,3 +13,6 @@ class Player:
 
     def receive_cards(self, *cards: Card):
         self.hand.extend(cards)
+
+    def check(self):
+        self.has_checked = True

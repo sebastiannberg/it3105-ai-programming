@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_caching import Cache
+from typing import List
 
 import pickle
 import sys
@@ -10,6 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "s
 from games.poker.poker_game_manager import PokerGameManager
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
+from games.poker.actions.action import Action
 
 app = Flask(__name__)
 CORS(app)
@@ -55,11 +57,34 @@ def legal_action():
         game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
         current_state = game_manager.game
         current_player = game_manager.game.active_player
-        legal_actions = PokerStateManager.find_all_legal_actions(state=current_state, player=current_player)
+        legal_actions = PokerStateManager.find_all_legal_actions(state=current_state, player=current_player, rules=game_manager.rules)
+        cache.set("legal_actions", pickle.dumps(legal_actions))
         legal_actions_dicts = [action.to_dict() for action in legal_actions]
         return jsonify(legal_actions_dicts), 200
     else:
         return jsonify({"error": "Failed to fetch possible actions"}), 404
+
+@app.route("/apply-action", methods=["POST"])
+def apply_action():
+    action = request.json
+    serialized_game_manager = cache.get("game_manager")
+    serialized_legal_actions = cache.get("legal_actions")
+    if serialized_game_manager and serialized_legal_actions:
+        game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
+        legal_actions: List[Action] = pickle.loads(serialized_legal_actions)
+
+        selected_action = None
+        for action in legal_actions:
+            if action.name == action["name"] and action.player.name == action["player"]:
+                selected_action = action
+
+        if selected_action:
+            PokerStateManager.apply_action(game_manager, selected_action)
+        else:
+            return jsonify({"error": ""}), 404
+    else:
+        return jsonify({"error": ""}), 404
+
 
 if __name__ == "__main__":
     app.run(debug=True)

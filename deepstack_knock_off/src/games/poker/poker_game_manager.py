@@ -98,6 +98,23 @@ class PokerGameManager:
         next_player_index = (big_blind_index + 1) % len(self.game.round_players)
         self.game.active_player = self.game.round_players[next_player_index]
 
+    def proceed(self):
+        self.game.current_bet = 0
+        for player in self.game.round_players:
+            player.has_checked = False
+        if self.game.stage == "preflop" or self.game.stage == "flop" or self.game.stage == "turn":
+            if self.game.stage == "preflop":
+                self.game.stage = "flop"
+            elif self.game.stage == "flop":
+                self.game.stage = "turn"
+            elif self.game.stage == "turn":
+                self.game.stage = "river"
+            self.deal_cards()
+            self.assign_active_player()
+        elif self.game.stage == "river":
+            pass
+            # Poker Oracle time
+
     def jsonify_poker_game(self):
         if self.game.game_players:
             game_players_dict = {}
