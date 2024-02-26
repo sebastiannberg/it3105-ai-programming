@@ -207,3 +207,13 @@
 .action-item.selected {
     background-color: #f0f0f0;
 }
+
+.public-cards {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.public-cards > * {
+    margin: 0 5px;
+}

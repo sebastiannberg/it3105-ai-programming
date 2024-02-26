@@ -45,7 +45,7 @@ const BoardPage = () => {
       </div>
       <div className='action-section'>
         <h1>Actions</h1>
-        <ActionPane gameState={gameState} />
+        <ActionPane gameState={gameState} fetchGameState={fetchGameState} />
       </div>
     </div>
   )

@@ -10,6 +10,7 @@ class Player:
         self.hand: List[Card] = []
         self.chips: int = initial_chips
         self.player_bet = 0
+        self.has_checked = False
 
     def receive_cards(self, *cards: Card):
         self.hand.extend(cards)

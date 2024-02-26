@@ -4,9 +4,10 @@ from games.poker.players.player import Player
 
 class RaiseBet(Action):
 
-    def __init__(self, player: Player, chip_cost, raise_amount, raise_type: str):
+    def __init__(self, player: Player, chip_cost, raise_amount, raise_type):
         self.chip_cost: int = chip_cost
         self.raise_amount: int = raise_amount
+        self.raise_type: str = raise_type
         name = ""
         if raise_type == "small_blind":
             name = f"Small Blind ({chip_cost})"

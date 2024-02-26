@@ -3,6 +3,7 @@ from typing import Dict
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
 from games.poker.poker_state import PokerState
+from games.poker.players.player import Player
 from games.poker.players.ai_player import AIPlayer
 from games.poker.players.human_player import HumanPlayer
 from games.poker.actions.raise_bet import RaiseBet
@@ -35,6 +36,12 @@ class PokerGameManager:
         for i in range(num_human_players):
             players.append(HumanPlayer(name=f"Human Player {i+1}", initial_chips=initial_chips))
         return players
+
+    def find_round_player_by_name(self, player_name: str) -> Player:
+        for player in self.game.round_players:
+            if player.name == player_name:
+                return player
+        return None
 
     def assign_blind_roles(self):
         current_small_blind_player = self.game.small_blind_player
@@ -70,7 +77,7 @@ class PokerGameManager:
                                       chip_cost=self.game.small_blind_amount,
                                       raise_amount=raise_amount,
                                       raise_type="small_blind")
-        PokerStateManager.apply_action(self.game, small_blind_action)
+        PokerStateManager.apply_action(self, small_blind_action)
 
         # Big blind action
         raise_amount = (current_big_blind_player.player_bet + self.game.big_blind_amount) - self.game.current_bet
@@ -78,7 +85,7 @@ class PokerGameManager:
                                     chip_cost=self.game.big_blind_amount,
                                     raise_amount=raise_amount,
                                     raise_type="big_blind")
-        PokerStateManager.apply_action(self.game, big_blind_action)
+        PokerStateManager.apply_action(self, big_blind_action)
 
     def deal_cards(self):
         if self.game.stage == "preflop":
@@ -93,10 +100,18 @@ class PokerGameManager:
             self.game.public_cards.extend(cards)
 
     def assign_active_player(self):
-        current_big_blind_player = self.game.big_blind_player
-        big_blind_index = self.game.round_players.index(current_big_blind_player)
-        next_player_index = (big_blind_index + 1) % len(self.game.round_players)
-        self.game.active_player = self.game.round_players[next_player_index]
+        print("assign_active_player")
+        if not self.game.active_player:
+            current_big_blind_player = self.game.big_blind_player
+            big_blind_index = self.game.round_players.index(current_big_blind_player)
+            next_player_index = (big_blind_index + 1) % len(self.game.round_players)
+            self.game.active_player = self.game.round_players[next_player_index]
+        else:
+            current_active_player = self.game.active_player
+            current_active_player_index = self.game.round_players.index(current_active_player)
+            next_player_index = (current_active_player_index + 1) % len(self.game.round_players)
+            self.game.active_player = self.game.round_players[next_player_index]
+        print(self.game.active_player.name)
 
     def proceed(self):
         self.game.current_bet = 0
@@ -172,7 +187,7 @@ class PokerGameManager:
             "round_players": round_players_dict,
             "deck": deck_dict,
             "stage": self.game.stage,
-            "public_cards": [(card.rank, card.suit) for card in self.game.public_cards],
+            "public_cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.public_cards],
             "pot": self.game.pot,
             "current_bet": self.game.current_bet,
             "small_blind_amount": self.game.small_blind_amount,

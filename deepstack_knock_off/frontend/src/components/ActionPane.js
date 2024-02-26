@@ -3,8 +3,8 @@ import Action from "./Action";
 import axios from 'axios';
 
 
-const ActionPane = ({ gameState }) => {
-  const [actions, setActions] = useState([]); // State to store actions from API
+const ActionPane = ({ gameState, fetchGameState }) => {
+  const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
 
   const fetchLegalActions = async () => {
@@ -18,15 +18,29 @@ const ActionPane = ({ gameState }) => {
 
   useEffect(() => {
     fetchLegalActions();
-  }, []);
+  }, [gameState]);
 
   const handleActionClick = (action) => {
     setSelectedAction(action);
   };
 
   const applySelectedAction = () => {
-    // Logic to apply the selected action
     console.log("Applying action:", selectedAction);
+
+    const payload = {
+      name: selectedAction.name,
+      player: selectedAction.player
+    };
+
+    axios.post("http://127.0.0.1:5000/apply-action", payload)
+      .then(response => {
+        console.log("Action applied successfully:", response.data);
+        fetchGameState()
+      })
+      .catch(error => {
+        console.error("Failed to apply action:", error);
+      });
+
     // Reset selection after applying
     setSelectedAction(null);
   };

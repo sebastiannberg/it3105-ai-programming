@@ -22,6 +22,10 @@ const Card = ({ rank, suit }) => {
   else
     rankColorClass = "black-rank";
 
+  console.log(rank)
+  console.log(suit)
+  console.log(suitIcon)
+
   return (
     <div className="card">
       <p className={`card-rank ${rankColorClass}`}>{rank}</p>

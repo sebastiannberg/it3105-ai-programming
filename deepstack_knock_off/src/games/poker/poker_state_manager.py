@@ -1,4 +1,9 @@
+from __future__ import annotations
 from typing import List, Dict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from games.poker.poker_game_manager import PokerGameManager
 
 from games.poker.players.player import Player
 from games.poker.poker_state import PokerState
@@ -6,7 +11,6 @@ from games.poker.actions.action import Action
 from games.poker.actions.raise_bet import RaiseBet
 from games.poker.actions.fold import Fold
 from games.poker.actions.check import Check
-from games.poker.poker_game_manager import PokerGameManager
 
 
 class PokerStateManager:
@@ -56,9 +60,6 @@ class PokerStateManager:
 
     @staticmethod
     def _check(state: PokerState, player: Player, rules: Dict):
-        """
-
-        """
         if state.current_bet == player.player_bet:
             return Check(player=player)
         else:
@@ -95,22 +96,31 @@ class PokerStateManager:
         Apply a given action, assuming the action is legal.
         This method updates the game state based on the action.
         """
-        state = game_manager.game
+        player = game_manager.find_round_player_by_name(action.player.name)
+
         if isinstance(action, Fold):
-            state.round_players.remove(action.player)
+            game_manager.game.round_players.remove(player)
 
         if isinstance(action, Check):
-            state.active_player.check()
-            # TODO maybe move to app.py
-            if all(player.has_checked for player in state.round_players):
+            player.check()
+            if all(p.has_checked for p in game_manager.game.round_players):
                 game_manager.proceed()
             else:
                 game_manager.assign_active_player()
 
         if isinstance(action, RaiseBet):
-            state.active_player.chips -= action.chip_cost
-            state.current_bet += action.raise_amount
-            state.pot += action.chip_cost
-            state.active_player.player_bet = state.current_bet
-            # TODO maybe move to app.py
+            print("halla 2")
+            print(action.player.name)
+            print(action.player.chips)
+            player.chips -= action.chip_cost
+            print(action.player.chips)
+            game_manager.game.current_bet += action.raise_amount
+            game_manager.game.pot += action.chip_cost
+            print(action.player.player_bet)
+            player.player_bet = game_manager.game.current_bet
+            print(action.player.player_bet)
+            print(action.player)
+            print(game_manager.game.active_player)
+            if action.raise_type == "small_blind" or action.raise_type == "big_blind":
+                return
             game_manager.assign_active_player()
