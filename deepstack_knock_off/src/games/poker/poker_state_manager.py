@@ -28,16 +28,20 @@ class PokerStateManager:
         return init_state
 
     @staticmethod
-    def find_all_legal_actions(state: PokerState, player: Player, json: bool):
-        # return a list of all possible actions for the player given the player and the state
-        # fold (always possible)
-        # raise (always possible if have the money) remember rules and fixed amount
-        # check (if possible)
-        # rules for all in enabled
-        # if check is not available, then call is available and vice versa
+    def find_all_legal_actions(state: PokerState, player: Player) -> List[Action]:
         legal_actions = []
         legal_actions.append(Fold(player))
         return legal_actions
+
+    def _can_check(self):
+        return True
+
+    def _can_raise(self):
+        return True
+
+    def _can_all_in(self):
+        return False
+
 
     @staticmethod
     def apply_action(state: PokerState, action: Action):

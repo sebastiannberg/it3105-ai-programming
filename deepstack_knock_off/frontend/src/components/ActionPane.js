@@ -1,12 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Action from "./Action";
+import axios from 'axios';
 
 
 const ActionPane = ({ gameState }) => {
-
-  const actions = gameState.actions || ["Action 1", "Action 2", "Action 3", "Action 4"];
-
+  const [actions, setActions] = useState([]); // State to store actions from API
   const [selectedAction, setSelectedAction] = useState(null);
+
+  const fetchLegalActions = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:5000/legal-actions");
+      setActions(response.data);
+    } catch (error) {
+      console.error('Failed to fetch legal actions:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLegalActions();
+  }, []);
 
   const handleActionClick = (action) => {
     setSelectedAction(action);

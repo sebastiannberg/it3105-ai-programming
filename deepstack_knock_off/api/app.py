@@ -55,8 +55,9 @@ def legal_action():
         game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
         current_state = game_manager.game
         current_player = game_manager.game.active_player
-        legal_actions = PokerStateManager.find_all_legal_actions(state=current_state, player=current_player, json=True)
-        return jsonify(legal_actions), 200
+        legal_actions = PokerStateManager.find_all_legal_actions(state=current_state, player=current_player)
+        legal_actions_dicts = [action.to_dict() for action in legal_actions]
+        return jsonify(legal_actions_dicts), 200
     else:
         return jsonify({"error": "Failed to fetch possible actions"}), 404
 

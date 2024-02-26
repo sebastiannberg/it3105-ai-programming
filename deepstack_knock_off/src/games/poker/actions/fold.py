@@ -5,5 +5,4 @@ from games.poker.players.player import Player
 class Fold(Action):
 
     def __init__(self, player: Player):
-        self.player = player
-        super().__init__(name="Fold")
+        super().__init__(name="Fold", player=player)
