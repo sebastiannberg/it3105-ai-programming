@@ -19,7 +19,7 @@ class PokerStateManager:
     def gen_init_state(players: List[Player], deck, small_blind_amount, big_blind_amount):
         init_state = PokerState(
             game_players=players,
-            round_players=players,
+            round_players=players.copy(),
             deck=deck,
             stage="preflop",
             public_cards=[],
@@ -109,18 +109,10 @@ class PokerStateManager:
                 game_manager.assign_active_player()
 
         if isinstance(action, RaiseBet):
-            print("halla 2")
-            print(action.player.name)
-            print(action.player.chips)
             player.chips -= action.chip_cost
-            print(action.player.chips)
             game_manager.game.current_bet += action.raise_amount
             game_manager.game.pot += action.chip_cost
-            print(action.player.player_bet)
             player.player_bet = game_manager.game.current_bet
-            print(action.player.player_bet)
-            print(action.player)
-            print(game_manager.game.active_player)
             if action.raise_type == "small_blind" or action.raise_type == "big_blind":
                 return
             game_manager.assign_active_player()

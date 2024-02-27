@@ -99,19 +99,22 @@ class PokerGameManager:
             cards = self.game.deck.deal_cards(num_cards=1)
             self.game.public_cards.extend(cards)
 
-    def assign_active_player(self):
-        print("assign_active_player")
+    def assign_active_player(self, stage_change=False):
         if not self.game.active_player:
+            # Assign player after big blind
             current_big_blind_player = self.game.big_blind_player
             big_blind_index = self.game.round_players.index(current_big_blind_player)
             next_player_index = (big_blind_index + 1) % len(self.game.round_players)
             self.game.active_player = self.game.round_players[next_player_index]
+        elif stage_change:
+            # Assign first player after dealer
+            self.game.active_player = self.game.round_players[0]
         else:
+            # Assign player after current player
             current_active_player = self.game.active_player
             current_active_player_index = self.game.round_players.index(current_active_player)
             next_player_index = (current_active_player_index + 1) % len(self.game.round_players)
             self.game.active_player = self.game.round_players[next_player_index]
-        print(self.game.active_player.name)
 
     def proceed(self):
         self.game.current_bet = 0
@@ -125,7 +128,7 @@ class PokerGameManager:
             elif self.game.stage == "turn":
                 self.game.stage = "river"
             self.deal_cards()
-            self.assign_active_player()
+            self.assign_active_player(stage_change=True)
         elif self.game.stage == "river":
             pass
             # Poker Oracle time

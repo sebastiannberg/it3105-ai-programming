@@ -21,7 +21,7 @@ const BoardPage = () => {
     fetchGameState()
   }, []);
 
-  const playerEntries = gameState.round_players ? Object.entries(gameState.round_players) : [];
+  const playerEntries = gameState.game_players ? Object.entries(gameState.game_players) : [];
 
   const renderPlayers = (playerArray) => playerArray.map(([playerName, playerDetails]) => (
     <Player

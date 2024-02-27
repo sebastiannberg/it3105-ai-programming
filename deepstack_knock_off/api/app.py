@@ -29,12 +29,10 @@ def rules():
 def start_game():
     rules = request.json
     try:
-        print("aiaia")
         game_manager = PokerGameManager(rules, PokerOracle())
         game_manager.init_poker_game()
         game_manager.assign_blind_roles()
         game_manager.perform_blind_bets()
-        print("hello hello hello")
         game_manager.deal_cards()
         game_manager.assign_active_player()
         cache.set("game_manager", pickle.dumps(game_manager))
@@ -59,7 +57,6 @@ def legal_action():
         game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
         current_state = game_manager.game
         current_player = game_manager.game.active_player
-        print("legal_action()", current_player)
         legal_actions = PokerStateManager.find_all_legal_actions(state=current_state, player=current_player, rules=game_manager.rules)
         cache.set("legal_actions", pickle.dumps(legal_actions))
         legal_actions_dicts = [action.to_dict() for action in legal_actions]
@@ -78,22 +75,15 @@ def apply_action():
         legal_actions: List[Action] = pickle.loads(serialized_legal_actions)
 
         selected_action = None
-        for legal_action in legal_actions:  # Renamed loop variable for clarity
-            # Here, compare the action's name from legal_actions with the action_data from the request
-            # Assume each action's name is unique for simplicity
+        for legal_action in legal_actions:
+            # TODO maybe check player name as well
             if legal_action.name == action_data.get("name"):
                 selected_action = legal_action
                 break
 
-        print("apply_action()", game_manager.game.active_player)
-        print(selected_action.player)
-
         if selected_action:
-            print("halla 1")
-            # Assuming apply_action requires the state and the action
             PokerStateManager.apply_action(game_manager, selected_action)
-            print(game_manager.game.active_player.name)
-            cache.set("game_manager", pickle.dumps(game_manager))  # Serialize and save the updated game manager
+            cache.set("game_manager", pickle.dumps(game_manager))
             return jsonify({"message": "Action applied successfully."}), 200
         else:
             return jsonify({"error": "Action not found or not allowed."}), 404
