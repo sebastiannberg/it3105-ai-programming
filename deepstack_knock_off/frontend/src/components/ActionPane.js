@@ -3,7 +3,7 @@ import Action from "./Action";
 import axios from 'axios';
 
 
-const ActionPane = ({ gameState, fetchGameState }) => {
+const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined }) => {
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
 
@@ -36,6 +36,12 @@ const ActionPane = ({ gameState, fetchGameState }) => {
       .then(response => {
         console.log("Action applied successfully:", response.data);
         fetchGameState()
+
+        if (response.data.winner) {
+          onWinnerDetermined(response.data.winner)
+          setActions([]);
+          setSelectedAction(null);
+        }
       })
       .catch(error => {
         console.error("Failed to apply action:", error);
@@ -61,7 +67,7 @@ const ActionPane = ({ gameState, fetchGameState }) => {
           ))}
         </ul>
       </div>
-      <button className={buttonClass} onClick={applySelectedAction} disabled={!selectedAction}>Apply</button>
+      <button className={buttonClass} onClick={applySelectedAction} disabled={!selectedAction || actions.length === 0}>Apply</button>
     </div>
   );
 };

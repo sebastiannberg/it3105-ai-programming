@@ -91,28 +91,22 @@ class PokerStateManager:
                 return RaiseBet(player, chip_cost=(player.chips), raise_amount=(player.chips - state.current_bet), raise_type="all_in")
 
     @staticmethod
-    def apply_action(game_manager: PokerGameManager, action: Action):
+    def apply_action(state: PokerState, player:Player, action: Action):
         """
         Apply a given action, assuming the action is legal.
-        This method updates the game state based on the action.
+        This method updates the game state based on the action and the player.
         """
-        player = game_manager.find_round_player_by_name(action.player.name)
-
         if isinstance(action, Fold):
-            game_manager.game.round_players.remove(player)
+            state.round_players.remove(player)
+            player.fold()
 
         if isinstance(action, Check):
             player.check()
-            if all(p.has_checked for p in game_manager.game.round_players):
-                game_manager.proceed()
-            else:
-                game_manager.assign_active_player()
 
         if isinstance(action, RaiseBet):
             player.chips -= action.chip_cost
-            game_manager.game.current_bet += action.raise_amount
-            game_manager.game.pot += action.chip_cost
-            player.player_bet = game_manager.game.current_bet
-            if action.raise_type == "small_blind" or action.raise_type == "big_blind":
-                return
-            game_manager.assign_active_player()
+            state.current_bet += action.raise_amount
+            state.pot += action.chip_cost
+            player.player_bet = state.current_bet
+            # if action.raise_type == "small_blind" or action.raise_type == "big_blind":
+            #     return

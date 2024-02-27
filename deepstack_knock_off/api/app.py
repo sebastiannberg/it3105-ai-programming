@@ -82,7 +82,16 @@ def apply_action():
                 break
 
         if selected_action:
-            PokerStateManager.apply_action(game_manager, selected_action)
+            player = game_manager.find_round_player_by_name(selected_action.player.name)
+            PokerStateManager.apply_action(game_manager.game, player, selected_action)
+            if game_manager.check_for_game_winner():
+                return jsonify({"winner": game_manager.check_for_game_winner().name})
+            if game_manager.check_for_round_winner():
+                pass
+            if game_manager.check_for_proceed_stage():
+                game_manager.proceed_stage()
+            else:
+                game_manager.assign_active_player()
             cache.set("game_manager", pickle.dumps(game_manager))
             return jsonify({"message": "Action applied successfully."}), 200
         else:

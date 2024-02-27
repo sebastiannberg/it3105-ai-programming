@@ -70,22 +70,20 @@ class PokerGameManager:
 
         if not current_small_blind_player or not current_big_blind_player:
             raise ValueError("Either small blind or big blind is not assigned to a player")
-
         # Small blind action
         raise_amount = (current_small_blind_player.player_bet + self.game.small_blind_amount) - self.game.current_bet
         small_blind_action = RaiseBet(player=current_small_blind_player,
                                       chip_cost=self.game.small_blind_amount,
                                       raise_amount=raise_amount,
                                       raise_type="small_blind")
-        PokerStateManager.apply_action(self, small_blind_action)
-
+        PokerStateManager.apply_action(self.game, current_small_blind_player, small_blind_action)
         # Big blind action
         raise_amount = (current_big_blind_player.player_bet + self.game.big_blind_amount) - self.game.current_bet
         big_blind_action = RaiseBet(player=current_big_blind_player,
                                     chip_cost=self.game.big_blind_amount,
                                     raise_amount=raise_amount,
                                     raise_type="big_blind")
-        PokerStateManager.apply_action(self, big_blind_action)
+        PokerStateManager.apply_action(self.game, current_big_blind_player, big_blind_action)
 
     def deal_cards(self):
         if self.game.stage == "preflop":
@@ -112,14 +110,53 @@ class PokerGameManager:
         else:
             # Assign player after current player
             current_active_player = self.game.active_player
-            current_active_player_index = self.game.round_players.index(current_active_player)
-            next_player_index = (current_active_player_index + 1) % len(self.game.round_players)
-            self.game.active_player = self.game.round_players[next_player_index]
+            current_active_player_index = self.game.game_players.index(current_active_player)
+            next_player_index = (current_active_player_index + 1) % len(self.game.game_players)
 
-    def proceed(self):
+            while self.game.game_players[next_player_index].has_folded:
+                next_player_index = (next_player_index + 1) % len(self.game.game_players)
+                if next_player_index == current_active_player_index:
+                    break
+
+            self.game.active_player = self.game.game_players[next_player_index]
+
+    def check_for_proceed_stage(self):
+        if self.game.stage == "preflop":
+            if not any(player.last_raised for player in self.game.round_players):
+                if self.game.big_blind_player.has_checked and (all(player.has_called or player.has_folded) for player in self.game.round_players):
+                    return True
+            else:
+                # First, check if all players have checked
+                all_checked = all(player.has_checked for player in self.game.round_players)
+                # Then, check for the scenario where one player has raised and the others have called
+                raised_and_called = False
+                if any(player.last_raised for player in self.game.round_players):
+                    # Find the player who last raised
+                    last_raised_player = next(player for player in self.game.round_players if player.last_raised)
+                    # Check if all other players have called
+                    raised_and_called = all(player.has_called or player is last_raised_player for player in self.game.round_players)
+                if all_checked or raised_and_called:
+                    return True
+        else:
+            # First, check if all players have checked
+            all_checked = all(player.has_checked for player in self.game.round_players)
+            # Then, check for the scenario where one player has raised and the others have called
+            raised_and_called = False
+            if any(player.last_raised for player in self.game.round_players):
+                # Find the player who last raised
+                last_raised_player = next(player for player in self.game.round_players if player.last_raised)
+                # Check if all other players have called
+                raised_and_called = all(player.has_called or player is last_raised_player for player in self.game.round_players)
+            if all_checked or raised_and_called:
+                return True
+
+    def proceed_stage(self):
         self.game.current_bet = 0
         for player in self.game.round_players:
+            player.player_bet = 0
             player.has_checked = False
+            player.has_called = False
+            player.last_raised = False
         if self.game.stage == "preflop" or self.game.stage == "flop" or self.game.stage == "turn":
             if self.game.stage == "preflop":
                 self.game.stage = "flop"
@@ -132,6 +169,42 @@ class PokerGameManager:
         elif self.game.stage == "river":
             pass
             # Poker Oracle time
+
+    def showdown(self):
+        pass
+
+    def check_for_round_winner(self):
+        """
+        Checks for winner and return player.
+        If no winner it returns None
+        """
+        if len(self.game.round_players) == 1:
+            return self.game.round_players[0]
+        else:
+            return None
+
+    def process_winnings(self):
+        """
+        Assumes there are one player left in current round that
+        is the winner of the round
+        """
+        pass
+
+    def end_round_next_round(self):
+        """
+        Ends the current round and starts the next round if
+        there are still more than one player left in the game
+        """
+        pass
+
+    def check_for_busting(self):
+        pass
+
+    def check_for_game_winner(self):
+        if len(self.game.game_players) == 1:
+            return self.game.game_players[0]
+        else:
+            return None
 
     def jsonify_poker_game(self):
         if self.game.game_players:

@@ -10,10 +10,19 @@ class Player:
         self.hand: List[Card] = []
         self.chips: int = initial_chips
         self.player_bet = 0
+        self.has_folded = False
         self.has_checked = False
+        self.has_called = False
+        self.last_raised = False
 
     def receive_cards(self, *cards: Card):
         self.hand.extend(cards)
 
+    def fold(self):
+        self.has_folded = True
+
     def check(self):
         self.has_checked = True
+
+    def call(self):
+        self.has_called = True
