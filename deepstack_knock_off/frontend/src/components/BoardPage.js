@@ -8,6 +8,7 @@ import Player from './Player';
 const BoardPage = () => {
   const [gameState, setGameState] = useState("");
   const [winner, setWinner] = useState(null);
+  const [roundWinner, setRoundWinner] = useState(null);
 
   const fetchGameState = async () => {
     try {
@@ -42,13 +43,15 @@ const BoardPage = () => {
       </div>
       <div className='board-section'>
         <h1>
-          {winner ? `${winner} is the winner!` : gameState.active_player ? `${Object.keys(gameState.active_player)[0]}'s turn` : "no current player"}
+          {winner ? `${winner} is the winner!` :
+          roundWinner ? `${roundWinner} has won the round!` :
+          gameState.active_player ? `${Object.keys(gameState.active_player)[0]}'s turn` : "no current player"}
         </h1>
         <GameBoard gameState={gameState} />
       </div>
       <div className='action-section'>
         <h1>Actions</h1>
-        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} />
+        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinner={setRoundWinner} />
       </div>
     </div>
   )

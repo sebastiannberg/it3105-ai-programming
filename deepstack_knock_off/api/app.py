@@ -86,8 +86,12 @@ def apply_action():
             PokerStateManager.apply_action(game_manager.game, player, selected_action)
             if game_manager.check_for_game_winner():
                 return jsonify({"winner": game_manager.check_for_game_winner().name})
-            if game_manager.check_for_round_winner():
-                pass
+            if game_manager.check_for_early_round_winner():
+                game_manager.process_winnings()
+                game_manager.update_busting()
+                if game_manager.check_for_game_winner():
+                    return jsonify({"winner": game_manager.check_for_game_winner().name})
+                return jsonify({"round_winner": game_manager.check_for_early_round_winner().name})
             if game_manager.check_for_proceed_stage():
                 game_manager.proceed_stage()
             else:

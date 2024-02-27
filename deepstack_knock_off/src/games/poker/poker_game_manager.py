@@ -173,7 +173,7 @@ class PokerGameManager:
     def showdown(self):
         pass
 
-    def check_for_round_winner(self):
+    def check_for_early_round_winner(self):
         """
         Checks for winner and return player.
         If no winner it returns None
@@ -188,7 +188,14 @@ class PokerGameManager:
         Assumes there are one player left in current round that
         is the winner of the round
         """
-        pass
+        winnings_per_player = self.game.pot // len(self.game.round_players)
+
+        for player in self.game.round_players:
+            player.chips += winnings_per_player
+
+        # If the pot cannot be evenly divided, add remainder to pot
+        total_distributed = winnings_per_player * len(self.game.round_players)
+        self.game.pot -= total_distributed
 
     def end_round_next_round(self):
         """
@@ -197,8 +204,10 @@ class PokerGameManager:
         """
         pass
 
-    def check_for_busting(self):
-        pass
+    def update_busting(self):
+        for player in self.game.game_players:
+            if player.chips <= 0:
+                self.game.game_players.remove(player)
 
     def check_for_game_winner(self):
         if len(self.game.game_players) == 1:

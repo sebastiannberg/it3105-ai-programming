@@ -3,7 +3,7 @@ import Action from "./Action";
 import axios from 'axios';
 
 
-const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined }) => {
+const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinner }) => {
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
 
@@ -39,6 +39,10 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined }) => {
 
         if (response.data.winner) {
           onWinnerDetermined(response.data.winner)
+          setActions([]);
+          setSelectedAction(null);
+        } else if (response.data.round_winner) {
+          onRoundWinner(response.data.round_winner)
           setActions([]);
           setSelectedAction(null);
         }
