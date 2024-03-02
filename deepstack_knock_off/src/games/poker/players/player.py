@@ -26,3 +26,11 @@ class Player:
 
     def call(self):
         self.has_called = True
+
+    def ready_for_new_round(self):
+        self.hand = []
+        self.player_bet = 0
+        self.has_folded = False
+        self.has_checked = False
+        self.has_called = False
+        self.last_raised = False

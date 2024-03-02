@@ -3,7 +3,7 @@ import Action from "./Action";
 import axios from 'axios';
 
 
-const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinner }) => {
+const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinner, winner, roundWinner }) => {
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
 
@@ -35,8 +35,6 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
     axios.post("http://127.0.0.1:5000/apply-action", payload)
       .then(response => {
         console.log("Action applied successfully:", response.data);
-        fetchGameState()
-
         if (response.data.winner) {
           onWinnerDetermined(response.data.winner)
           setActions([]);
@@ -45,23 +43,25 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
           onRoundWinner(response.data.round_winner)
           setActions([]);
           setSelectedAction(null);
+        } else {
+          fetchGameState()
         }
       })
       .catch(error => {
         console.error("Failed to apply action:", error);
       });
-
     // Reset selection after applying
     setSelectedAction(null);
   };
 
   const buttonClass = selectedAction ? "poker-button" : "poker-button disabled";
+  const shouldDisplayActions = !winner && !roundWinner;
 
   return (
     <div className="action-pane">
       <div className="scroll-box">
         <ul>
-          {actions.map((action, index) => (
+          {shouldDisplayActions && actions.map((action, index) => (
             <Action
               key={index}
               action={action}

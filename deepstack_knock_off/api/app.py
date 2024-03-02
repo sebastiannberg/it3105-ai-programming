@@ -51,7 +51,7 @@ def game_state():
         return jsonify({"error": "Game not started."}), 404
 
 @app.route("/legal-actions", methods=["GET"])
-def legal_action():
+def legal_actions():
     serialized_game_manager = cache.get("game_manager")
     if serialized_game_manager:
         game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
@@ -66,7 +66,7 @@ def legal_action():
 
 @app.route("/apply-action", methods=["POST"])
 def apply_action():
-    action_data = request.json  # Renamed for clarity
+    action_data = request.json
     serialized_game_manager = cache.get("game_manager")
     serialized_legal_actions = cache.get("legal_actions")
 
@@ -84,24 +84,47 @@ def apply_action():
         if selected_action:
             player = game_manager.find_round_player_by_name(selected_action.player.name)
             PokerStateManager.apply_action(game_manager.game, player, selected_action)
-            if game_manager.check_for_game_winner():
-                return jsonify({"winner": game_manager.check_for_game_winner().name})
-            if game_manager.check_for_early_round_winner():
+
+            game_winner = game_manager.check_for_game_winner()
+            if game_winner:
+                cache.set("game_manager", pickle.dumps(game_manager))
+                return jsonify({"winner": game_winner.name})
+
+            round_winner = game_manager.check_for_early_round_winner()
+            if round_winner:
                 game_manager.process_winnings()
-                game_manager.update_busting()
-                if game_manager.check_for_game_winner():
-                    return jsonify({"winner": game_manager.check_for_game_winner().name})
-                return jsonify({"round_winner": game_manager.check_for_early_round_winner().name})
+                game_manager.remove_busted_players()
+
+                game_winner_after_early_round = game_manager.check_for_game_winner()
+                if game_winner_after_early_round:
+                    cache.set("game_manager", pickle.dumps(game_manager))
+                    return jsonify({"winner": game_winner_after_early_round.name})
+
+                cache.set("game_manager", pickle.dumps(game_manager))
+                return jsonify({"round_winner": round_winner.name})
+
             if game_manager.check_for_proceed_stage():
                 game_manager.proceed_stage()
             else:
                 game_manager.assign_active_player()
+
             cache.set("game_manager", pickle.dumps(game_manager))
             return jsonify({"message": "Action applied successfully."}), 200
         else:
             return jsonify({"error": "Action not found or not allowed."}), 404
     else:
         return jsonify({"error": "Game not started or legal actions not found."}), 404
+
+@app.route("/next-round", methods=["POST"])
+def next_round():
+    serialized_game_manager = cache.get("game_manager")
+    if serialized_game_manager:
+        game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
+        game_manager.end_round_next_round()
+        cache.set("game_manager", pickle.dumps(game_manager))
+        return jsonify({"message": "Next round started successfully."}), 200
+    else:
+        return jsonify({"error": "Game not started or not found."}), 404
 
 
 

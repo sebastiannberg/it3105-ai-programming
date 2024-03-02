@@ -7,7 +7,7 @@ class PokerOracle:
     def __init__(self):
         pass
 
-    def gen_deck(self, num_cards: int):
+    def gen_deck(self, num_cards: int, shuffled: bool):
         if num_cards % 4:
             raise ValueError(f"The number of cards must be divisible evenly by 4 to form a complete deck but was {num_cards}")
         num_ranks = int(num_cards / 4)
@@ -19,4 +19,7 @@ class PokerOracle:
         for rank in ranks[:num_ranks]:
             for suit in suits:
                 cards.append(Card(rank, suit))
-        return Deck(cards)
+        deck = Deck(cards)
+        if shuffled:
+            deck.shuffle()
+        return deck

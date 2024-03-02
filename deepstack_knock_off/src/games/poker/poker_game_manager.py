@@ -16,11 +16,14 @@ class PokerGameManager:
         self.oracle = oracle
 
     def init_poker_game(self):
-        deck = self.oracle.gen_deck(self.rules["deck_size"])
-        deck.shuffle()
+        deck = self.oracle.gen_deck(self.rules["deck_size"], shuffled=True)
         players = self.gen_poker_players(num_ai_players=self.rules["num_ai_players"], num_human_players=self.rules["num_human_players"])
         init_state = PokerStateManager.gen_init_state(players, deck, self.rules["small_blind_amount"], self.rules["big_blind_amount"])
         self.game: PokerState = init_state
+
+    def start_game(self):
+        # TODO
+        pass
 
     def gen_poker_players(self, num_ai_players, num_human_players):
         if num_ai_players + num_human_players > 6:
@@ -168,7 +171,7 @@ class PokerGameManager:
             self.assign_active_player(stage_change=True)
         elif self.game.stage == "river":
             pass
-            # Poker Oracle time
+            # Poker Oracle time and self.showdown()
 
     def showdown(self):
         pass
@@ -199,12 +202,27 @@ class PokerGameManager:
 
     def end_round_next_round(self):
         """
-        Ends the current round and starts the next round if
-        there are still more than one player left in the game
+        Ends the current round and starts the next round
         """
-        pass
+        # Reset every player in the game for a new round
+        for player in self.game.game_players:
+            player.ready_for_new_round()
+            # Add game players to round players
+            if player not in self.game.round_players:
+                self.game.round_players.append(player)
+        # Reset state variables
+        self.game.active_player = None
+        self.game.current_bet = 0
+        self.game.public_cards = []
+        self.game.stage = "preflop"
+        self.deck = self.oracle.gen_deck(num_cards=52, shuffled=True)
+        # Init a new round
+        self.assign_blind_roles()
+        self.perform_blind_bets()
+        self.deal_cards()
+        self.assign_active_player()
 
-    def update_busting(self):
+    def remove_busted_players(self):
         for player in self.game.game_players:
             if player.chips <= 0:
                 self.game.game_players.remove(player)

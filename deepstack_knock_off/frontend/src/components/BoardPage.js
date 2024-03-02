@@ -35,6 +35,19 @@ const BoardPage = () => {
     />
   ));
 
+  const handleNextRound = async () => {
+    try {
+      console.log('Proceeding to the next round...');
+      axios.post("http://127.0.0.1:5000/next-round")
+        .then(() => {
+          fetchGameState()
+        })
+      setRoundWinner(null);
+    } catch (error) {
+      console.error('Failed to proceed to the next round:', error);
+    }
+  };
+
   return(
     <div className='board-page'>
       <div className='player-section'>
@@ -48,10 +61,17 @@ const BoardPage = () => {
           gameState.active_player ? `${Object.keys(gameState.active_player)[0]}'s turn` : "no current player"}
         </h1>
         <GameBoard gameState={gameState} />
+        <button
+          className={`poker-button ${roundWinner ? '' : 'poker-button-invisible'}`}
+          onClick={handleNextRound}
+          disabled={!roundWinner}
+        >
+          Next Round
+        </button>
       </div>
       <div className='action-section'>
         <h1>Actions</h1>
-        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinner={setRoundWinner} />
+        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinner={setRoundWinner} winner={winner} roundWinner={roundWinner} />
       </div>
     </div>
   )
