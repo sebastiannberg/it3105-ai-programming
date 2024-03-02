@@ -1,5 +1,4 @@
 # it3105-ai-programming
 
-git checkout -b "branch-name"
-
-git push -u origin branch-name
+TODO: check this pattern: raise, raise, call, check, check
+double check error
