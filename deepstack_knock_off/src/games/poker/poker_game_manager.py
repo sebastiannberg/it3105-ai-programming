@@ -70,7 +70,6 @@ class PokerGameManager:
     def perform_blind_bets(self):
         current_small_blind_player = self.game.small_blind_player
         current_big_blind_player = self.game.big_blind_player
-
         if not current_small_blind_player or not current_big_blind_player:
             raise ValueError("Either small blind or big blind is not assigned to a player")
         # Small blind action
@@ -109,7 +108,18 @@ class PokerGameManager:
             self.game.active_player = self.game.round_players[next_player_index]
         elif stage_change:
             # Assign first player after dealer
-            self.game.active_player = self.game.round_players[0]
+            if not self.game.small_blind_player.has_folded:
+                self.game.active_player = self.game.small_blind_player
+            else:
+                small_blind_index = self.game.game_players.index(self.game.small_blind_player)
+                next_player_index = (small_blind_index + 1) % len(self.game.game_players)
+
+                while self.game.game_players[next_player_index].has_folded:
+                    next_player_index = (next_player_index + 1) % len(self.game.game_players)
+                    if next_player_index == current_active_player_index:
+                        break
+
+                self.game.active_player = self.game.game_players[next_player_index]
         else:
             # Assign player after current player
             current_active_player = self.game.active_player
@@ -207,9 +217,7 @@ class PokerGameManager:
         # Reset every player in the game for a new round
         for player in self.game.game_players:
             player.ready_for_new_round()
-            # Add game players to round players
-            if player not in self.game.round_players:
-                self.game.round_players.append(player)
+        self.game.round_players = self.game.game_players.copy()
         # Reset state variables
         self.game.active_player = None
         self.game.current_bet = 0

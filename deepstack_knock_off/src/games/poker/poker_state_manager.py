@@ -108,5 +108,3 @@ class PokerStateManager:
             state.current_bet += action.raise_amount
             state.pot += action.chip_cost
             player.player_bet = state.current_bet
-            # if action.raise_type == "small_blind" or action.raise_type == "big_blind":
-            #     return
