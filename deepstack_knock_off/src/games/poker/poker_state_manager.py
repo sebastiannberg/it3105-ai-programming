@@ -108,3 +108,10 @@ class PokerStateManager:
             state.current_bet += action.raise_amount
             state.pot += action.chip_cost
             player.player_bet = state.current_bet
+            if action.raise_type == "call":
+                player.call()
+            elif action.raise_type == "raise":
+                for player in state.round_players:
+                    player.has_called = False
+                    player.last_raised = False
+                player.poker_raise()

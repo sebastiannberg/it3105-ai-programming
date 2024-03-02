@@ -27,6 +27,9 @@ class Player:
     def call(self):
         self.has_called = True
 
+    def poker_raise(self):
+        self.last_raised = True
+
     def ready_for_new_round(self):
         self.hand = []
         self.player_bet = 0
