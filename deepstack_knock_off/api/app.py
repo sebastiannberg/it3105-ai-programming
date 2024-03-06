@@ -83,6 +83,7 @@ def apply_action():
 
         if selected_action:
             player = game_manager.find_round_player_by_name(selected_action.player.name)
+            print(player.name, "in API")
             PokerStateManager.apply_action(game_manager.game, player, selected_action)
 
             game_winner = game_manager.check_for_game_winner()

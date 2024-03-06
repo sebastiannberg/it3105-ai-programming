@@ -146,8 +146,12 @@ class PokerGameManager:
                 if any(player.last_raised for player in self.game.round_players):
                     # Find the player who last raised
                     last_raised_player = next(player for player in self.game.round_players if player.last_raised)
+                    print(last_raised_player)
+                    print([player.has_called for player in self.game.round_players])
                     # Check if all other players have called
-                    raised_and_called = all(player.has_called or player is last_raised_player for player in self.game.round_players)
+                    print([player for player in self.game.round_players])
+                    raised_and_called = all((player.has_called or player is last_raised_player) for player in self.game.round_players)
+                print(raised_and_called)
                 if all_checked or raised_and_called:
                     return True
         else:

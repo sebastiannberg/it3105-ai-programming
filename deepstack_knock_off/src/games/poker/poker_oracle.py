@@ -23,3 +23,13 @@ class PokerOracle:
         if shuffled:
             deck.shuffle()
         return deck
+
+    def gen_utility_matrix(self, cards):
+        # It can also generate utility matrices for any collection of 3, 4 or 5 public cards.
+        pass
+
+    def classify_poker_hand(self):
+        pass
+
+    def compare_poker_hands(self):
+        pass

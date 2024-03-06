@@ -104,14 +104,19 @@ class PokerStateManager:
             player.check()
 
         if isinstance(action, RaiseBet):
+            print(player.name)
             player.chips -= action.chip_cost
             state.current_bet += action.raise_amount
             state.pot += action.chip_cost
             player.player_bet = state.current_bet
             if action.raise_type == "call":
+                print("called")
                 player.call()
             elif action.raise_type == "raise":
-                for player in state.round_players:
-                    player.has_called = False
-                    player.last_raised = False
+                print("raised")
+                for player_temp in state.round_players:
+                    player_temp.has_called = False
+                    player_temp.last_raised = False
+                print(player.name)
                 player.poker_raise()
+            print([(player.name, player.has_called, player.last_raised) for player in state.round_players])
