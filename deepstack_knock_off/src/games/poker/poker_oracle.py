@@ -220,18 +220,52 @@ class PokerOracle:
         return False, 0, []
 
     def is_full_house(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
-        # TODO
-        pass
+        rank_counter = Counter(card.rank for card in cards)
+        # Extract ranks that have three or more occurrences
+        three_counts = {rank for rank, count in rank_counter.items() if count >= 3}
+        # Pairs could also be part of another Three of a Kind not selected as the primary Three of a Kind
+        pair_counts = {rank for rank, count in rank_counter.items() if count == 2 or (count >= 3 and rank not in three_counts)}
+
+        if three_counts:
+            # Convert ranks to values and sort to find the highest Three of a Kind
+            three_values = sorted([self.rank_to_value_mapping[rank] for rank in three_counts], reverse=True)
+            highest_three_value = three_values[0]
+
+            # Handle case where there's another Three of a Kind or a Pair
+            if len(three_values) > 1 or pair_counts:
+                # If there's a second Three of a Kind, use it as the pair for the Full House
+                # Otherwise, use the highest pair available
+                second_set_value = three_values[1] if len(three_values) > 1 else max(self.rank_to_value_mapping[rank] for rank in pair_counts)
+                return True, highest_three_value, [second_set_value]
+
+        return False, 0, []
 
     def is_four_of_a_kind(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         rank_counter = Counter(card.rank for card in cards)
-        for rank, count in rank_counter.items():
-            if count == 4:
-                four_of_a_kind_cards = [card for card in cards if card.rank == rank]
+        fours = [(rank, count) for rank, count in rank_counter.items() if count == 4]
+        if fours:
+            four_of_a_kind_rank = fours[0]
+            four_of_a_kind_value = self.rank_to_value_mapping[four_of_a_kind_rank]
+
+            # Find the highest card outside the Four of a Kind to serve as the kicker
+            kickers = sorted([self.rank_to_value_mapping[card.rank] for card in cards if card.rank != four_of_a_kind_rank], reverse=True)[:1]
+
+            return True, four_of_a_kind_value, kickers
+
+        return False, 0, []
 
     def is_straight_flush(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
-        # TODO
-        return self.is_flush(cards) and self.is_straight(cards)
+        suits = {card.suit for card in cards}
+        for suit in suits:
+            suited_cards = [card for card in cards if card.suit == suit]
+            if len(suited_cards) < 5:
+                # Not enough cards of the same suit for a straight flush
+                continue
+            # Now check if these suited cards form a straight
+            s_success, s_value, _ = self.is_straight(suited_cards)
+            if s_success:
+                return True, s_value, []
+        return False, 0, []
 
     def is_royal_flush(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         sf_success, sf_value, _ = self.is_straight_flush(cards)
@@ -272,4 +306,4 @@ class PokerOracle:
             elif player_hand.primary_value < opponent_hand.primary_value:
                 return False
             else:
-                pass
+                raise ValueError(f"TODO {player_hand.category, player_hand.primary_value, player_hand.kickers} {opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers}")
