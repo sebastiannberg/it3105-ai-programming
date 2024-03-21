@@ -129,20 +129,32 @@ class PokerOracle:
 
         raise ValueError("Failure when classifying poker hand")
 
-    def is_royal_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
-        sf_success, sf_value, _ = self.is_straight_flush(cards)
-        if sf_success and sf_value == 14: # High card of Ace indicates a royal flush
-            return True, sf_value, []
+    def is_high_card(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
+        if len(cards) < 5:
+            raise ValueError(f"Unexpected behaviour, less than 5 cards: {len(cards)} cards")
+        cards.sort(key=lambda card: self.rank_to_value_mapping[card.rank], reverse=True)
+        high_card = self.rank_to_value_mapping[cards[0].rank]
+        kickers = [self.rank_to_value_mapping[card.rank] for card in cards[1:5]]
+        return True, high_card, kickers
+
+    def is_pair(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
+        card_values = [self.rank_to_value_mapping[card.rank] for card in cards]
+        value_counter = Counter(card_values)
+        pairs = [value for value, count in value_counter.items() if count == 2]
+        if len(pairs) == 1:
+            pair_value = pairs[0]
+            kickers = sorted([value for value in card_values if value != pair_value], reverse=True)[:3]
+            return True, pair_value, kickers
         return False, 0, []
 
-    def is_straight_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
-        return self.is_flush(cards) and self.is_straight(cards)
+    def is_two_pair(self, rank_counts: Counter) -> bool:
+        return list(rank_counts.values()).count(2) >= 2
 
-    def is_four_of_a_kind(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
-        return 4 in rank_counts.values()
+    def is_three_of_a_kind(self, rank_counts: Counter) -> bool:
+        return 3 in rank_counts.values()
 
-    def is_full_house(self, cards: List[Card]) -> bool:
-        return sorted(rank_counts.values(), reverse=True)[:2] == [3, 2]
+    def is_straight(self, cards: List[Card]) -> bool:
+        pass
 
     def is_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
         suit_counter = Counter(card.suit for card in cards)
@@ -155,31 +167,29 @@ class PokerOracle:
                 return True, high_card, []
         return False, 0, []
 
-    def is_straight(self, cards: List[Card]) -> bool:
-        ranks = [card.rank for card in cards]
-        ranks = list(set(ranks))  # Remove duplicates
-        ranks.sort()
-
-        # Handle the low Ace case
-        if set(ranks) == {2, 3, 4, 5, 14}:
-            return True
-
-        for start in range(len(ranks) - 4):
-            if ranks[start + 4] - ranks[start] == 4:
-                return True
-        return False
-
-    def is_three_of_a_kind(self, rank_counts: Counter) -> bool:
-        return 3 in rank_counts.values()
-
-    def is_two_pair(self, rank_counts: Counter) -> bool:
-        return list(rank_counts.values()).count(2) >= 2
-
-    def is_pair(self, rank_counts: Counter) -> bool:
-        return 2 in rank_counts.values()
-
-    def is_high_card(self, all_cards: List[Card]):
+    def is_full_house(self, cards: List[Card]) -> bool:
+        # TODO
         pass
+
+    def is_four_of_a_kind(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
+        rank_counter = Counter(card.rank for card in cards)
+        for rank, count in rank_counter.items():
+            if count == 4:
+                four_of_a_kind_cards = [card for card in cards if card.rank == rank]
+
+    def is_straight_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
+        # TODO
+        return self.is_flush(cards) and self.is_straight(cards)
+
+    def is_royal_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
+        sf_success, sf_value, _ = self.is_straight_flush(cards)
+        if sf_success and sf_value == 14: # High card of Ace indicates a royal flush
+            return True, sf_value, []
+        return False, 0, []
+
+
+
+
 
     def compare_poker_hands(self, player_hand: HandType, opponent_hand: HandType):
         """
