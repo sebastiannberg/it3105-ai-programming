@@ -141,6 +141,8 @@ class PokerOracle:
         card_values = [self.rank_to_value_mapping[card.rank] for card in cards]
         value_counter = Counter(card_values)
         pairs = [value for value, count in value_counter.items() if count == 2]
+
+        # Identifies if there's exactly one pair among the cards, optimal for up to 7 cards
         if len(pairs) == 1:
             pair_value = pairs[0]
             kickers = sorted([value for value in card_values if value != pair_value], reverse=True)[:3]
@@ -151,7 +153,7 @@ class PokerOracle:
         card_values = [self.rank_to_value_mapping[card.rank] for card in cards]
         value_counter = Counter(card_values)
         pairs = [value for value, count in value_counter.items() if count == 2]
-        # Can in theory have three pairs when seven cards
+        # In theory possible to have three pairs when seven cards
         if len(pairs) >= 2:
             # Sort pairs to have the highest pair values first
             pairs.sort(reverse=True)
@@ -179,7 +181,32 @@ class PokerOracle:
         return False, 0, []
 
     def is_straight(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
-        pass
+        values = sorted({self.rank_to_value_mapping[card.rank] for card in cards})
+
+        # Add a check for the low Ace straight (A-2-3-4-5)
+        if set([14, 2, 3, 4, 5]).issubset(values):
+            # Adding '1' to represent Ace as the low card for straight calculation
+            values.append(1)
+            values.sort()
+
+        consecutive_count = 1
+        max_straight_high_card = 0
+
+        for i in range(1, len(values)):
+            # Check if the current card is consecutive to the previous
+            if values[i] - values[i - 1] == 1:
+                consecutive_count += 1
+                # If we've found 5 consecutive cards, update the highest card of the straight found so far
+                if consecutive_count >= 5:
+                    max_straight_high_card = values[i]
+            else:
+                # Reset the count if the sequence is broken
+                consecutive_count = 1
+
+        if max_straight_high_card > 0:
+            return True, max_straight_high_card, []
+        else:
+            return False, 0, []
 
     def is_flush(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         suit_counter = Counter(card.suit for card in cards)
