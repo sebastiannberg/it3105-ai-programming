@@ -147,16 +147,41 @@ class PokerOracle:
             return True, pair_value, kickers
         return False, 0, []
 
-    def is_two_pair(self, rank_counts: Counter) -> bool:
-        return list(rank_counts.values()).count(2) >= 2
+    def is_two_pair(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
+        card_values = [self.rank_to_value_mapping[card.rank] for card in cards]
+        value_counter = Counter(card_values)
+        pairs = [value for value, count in value_counter.items() if count == 2]
+        # Can in theory have three pairs when seven cards
+        if len(pairs) >= 2:
+            # Sort pairs to have the highest pair values first
+            pairs.sort(reverse=True)
+            highest_pair, second_highest_pair = pairs[:2]
+            kickers = sorted([value for value in card_values if value not in pairs], reverse=True)[:1]
+            # Consider the highest pair as the primary value and second highest in the kickers
+            return True, highest_pair, [second_highest_pair] + kickers
+        return False, 0, []
 
-    def is_three_of_a_kind(self, rank_counts: Counter) -> bool:
-        return 3 in rank_counts.values()
+    def is_three_of_a_kind(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
+        rank_counter = Counter(card.rank for card in cards)
+        threes = [(rank, count) for rank, count in rank_counter.items() if count == 3]
+        # In theory possible to have two three of a kinds when seven cards
+        if threes:
+            # Sort them by their rank's value, highest first
+            threes.sort(key=lambda x: self.rank_to_value_mapping[x[0]], reverse=True)
+            highest_three_of_a_kind_rank, _ = threes[0]
 
-    def is_straight(self, cards: List[Card]) -> bool:
+            three_of_a_kind_value = self.rank_to_value_mapping[highest_three_of_a_kind_rank]
+
+            # Exclude cards of the highest Three of a Kind rank, then take the two highest values as kickers
+            kickers = sorted([self.rank_to_value_mapping[card.rank] for card in cards if card.rank != highest_three_of_a_kind_rank], reverse=True)[:2]
+            return True, three_of_a_kind_value, kickers
+
+        return False, 0, []
+
+    def is_straight(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         pass
 
-    def is_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
+    def is_flush(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         suit_counter = Counter(card.suit for card in cards)
         for suit, count in suit_counter.items():
             if count >= 5:
@@ -167,29 +192,25 @@ class PokerOracle:
                 return True, high_card, []
         return False, 0, []
 
-    def is_full_house(self, cards: List[Card]) -> bool:
+    def is_full_house(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         # TODO
         pass
 
-    def is_four_of_a_kind(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
+    def is_four_of_a_kind(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         rank_counter = Counter(card.rank for card in cards)
         for rank, count in rank_counter.items():
             if count == 4:
                 four_of_a_kind_cards = [card for card in cards if card.rank == rank]
 
-    def is_straight_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
+    def is_straight_flush(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         # TODO
         return self.is_flush(cards) and self.is_straight(cards)
 
-    def is_royal_flush(self, cards: List[Card]) -> Tuple[bool, int, List[Card]]:
+    def is_royal_flush(self, cards: List[Card]) -> Tuple[bool, int, List[int]]:
         sf_success, sf_value, _ = self.is_straight_flush(cards)
         if sf_success and sf_value == 14: # High card of Ace indicates a royal flush
             return True, sf_value, []
         return False, 0, []
-
-
-
-
 
     def compare_poker_hands(self, player_hand: HandType, opponent_hand: HandType):
         """
@@ -218,7 +239,7 @@ class PokerOracle:
             return False
         else:
             # If the hand types are the same, further comparison is needed
-            # TODO
+            # TODO how to handle this
             if player_hand.primary_value > opponent_hand.primary_value:
                 return True
             elif player_hand.primary_value < opponent_hand.primary_value:
