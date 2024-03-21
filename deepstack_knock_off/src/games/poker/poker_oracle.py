@@ -244,7 +244,7 @@ class PokerOracle:
         rank_counter = Counter(card.rank for card in cards)
         fours = [(rank, count) for rank, count in rank_counter.items() if count == 4]
         if fours:
-            four_of_a_kind_rank = fours[0]
+            four_of_a_kind_rank = fours[0][0]
             four_of_a_kind_value = self.rank_to_value_mapping[four_of_a_kind_rank]
 
             # Find the highest card outside the Four of a Kind to serve as the kicker
