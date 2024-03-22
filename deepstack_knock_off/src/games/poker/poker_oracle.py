@@ -1,8 +1,10 @@
 from typing import List, Tuple
+import numpy as np
 import pandas as pd
 import itertools
 import time
 from collections import Counter
+from random import sample
 
 from games.poker.utils.deck import Deck
 from games.poker.utils.card import Card
@@ -59,7 +61,7 @@ class PokerOracle:
         hand_labels = ["".join([f"{card.rank}{card.suit}" for card in hand]) for hand in possible_hands]
 
         # Initialize utility matrix with zeros
-        utility_matrix = pd.DataFrame(0, index=hand_labels, columns=hand_labels)
+        utility_matrix = pd.DataFrame(0, index=hand_labels, columns=hand_labels, dtype=np.int8)
 
         for player_hand_index, player_hand in enumerate(possible_hands):
             print(f"\rPlayer hand {player_hand_index}", end="")
@@ -344,3 +346,41 @@ class PokerOracle:
                         return "opponent"
                 # If all primary values and kickers are equal, it's a tie
                 return "tie"
+
+    def perform_rollouts(self, player_hand: List[Card], public_cards: List[Card], num_rollouts: int = 5000) -> float:
+        if len(public_cards) not in (0, 3, 4, 5):
+            raise ValueError("Length of public cards must be 0, 3, 4 or 5 when performing rollouts")
+        if len(player_hand) != 2:
+            raise ValueError("Length of player hand should be 2 when performing rollouts")
+
+        wins = 0
+        ties = 0
+
+        for _ in range(num_rollouts):
+            deck = self.gen_deck(52, shuffled=True)
+            deck.cards = [card for card in deck.cards if card not in player_hand + public_cards]
+
+            opponent_hand = sample(deck.cards, 2)
+            deck.cards = [card for card in deck.cards if card not in opponent_hand]
+
+            additional_cards_needed = 5 - len(public_cards)
+            if additional_cards_needed > 0:
+                additional_public_cards = sample(deck.cards, additional_cards_needed)
+                final_board = public_cards + additional_public_cards
+            else:
+                final_board = public_cards
+
+            # Evaluate hands
+            player_hand_rank = self.classify_poker_hand(player_hand, final_board)
+            opponent_hand_rank = self.classify_poker_hand(opponent_hand, final_board)
+
+            # Compare hands and track outcomes
+            result = self.compare_poker_hands(player_hand_rank, opponent_hand_rank)
+            if result == "player":
+                wins += 1
+            elif result == "tie":
+                ties += 1
+
+        # Calculate win probability
+        win_probability = (wins + 0.5 * ties) / num_rollouts
+        return win_probability

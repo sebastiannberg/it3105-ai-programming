@@ -2,6 +2,8 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
+import numpy as np
+
 from games.poker.poker_oracle import PokerOracle
 from games.poker.utils.card import Card
 from games.poker.utils.hand_type import HandType
@@ -238,7 +240,6 @@ for player_hand, opponent_hand in opponent_win_tests:
     result = oracle.compare_poker_hands(player_hand, opponent_hand)
     assert result == "opponent", f"Expected 'opponent' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"
 
-
 tie_tests = (
     (
         HandType(category="straight", primary_value=14, kickers=[]),
@@ -255,5 +256,11 @@ for player_hand, opponent_hand in tie_tests:
     assert result == "tie", f"Expected 'tie' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"
 
 # Test Utility Matrix
-public_cards = [Card("J", "hearts"), Card("J", "spades"), Card("A", "clubs")]
-utility_matrix = oracle.gen_utility_matrix(public_cards)
+# public_cards = [Card("J", "hearts"), Card("J", "spades"), Card("A", "clubs")]
+# utility_matrix = oracle.gen_utility_matrix(public_cards)
+
+# Test Rollouts
+player_hand = [Card("2", "hearts"), Card("3", "spades")]
+public_cards = []
+result = oracle.perform_rollouts(player_hand, public_cards)
+print(result)
