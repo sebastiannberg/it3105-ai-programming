@@ -4,6 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "s
 
 from games.poker.poker_oracle import PokerOracle
 from games.poker.utils.card import Card
+from games.poker.utils.hand_type import HandType
 
 
 oracle = PokerOracle()
@@ -190,3 +191,65 @@ high_card_tests = (
 for hand, public_cards in high_card_tests:
     hand_type = oracle.classify_poker_hand(hand, public_cards)
     assert hand_type.category == "high_card", f"Expected 'high_card' but was '{hand_type.category}' in test with hand {[(card.rank, card.suit) for card in hand]} and public {[(card.rank, card.suit) for card in public_cards]}"
+
+player_win_tests = (
+    (
+        HandType(category="flush", primary_value=7, kickers=[]),
+        HandType(category="two_pair", primary_value=14, kickers=[3, 2])
+    ),
+    (
+        HandType(category="straight_flush", primary_value=9, kickers=[]),
+        HandType(category="four_of_a_kind", primary_value=7, kickers=[12])
+    ),
+    (
+        HandType(category="full_house", primary_value=11, kickers=[4]),
+        HandType(category="flush", primary_value=14, kickers=[])
+    ),
+    (
+        HandType(category="three_of_a_kind", primary_value=4, kickers=[14, 13]),
+        HandType(category="three_of_a_kind", primary_value=3, kickers=[14, 13])
+    ),
+    (
+        HandType(category="two_pair", primary_value=12, kickers=[3, 14]),
+        HandType(category="two_pair", primary_value=12, kickers=[3, 2])
+    ),
+    (
+        HandType(category="high_card", primary_value=14, kickers=[13, 12, 11, 9]),
+        HandType(category="high_card", primary_value=13, kickers=[12, 11, 10, 9])
+    )
+)
+
+for player_hand, opponent_hand in player_win_tests:
+    result = oracle.compare_poker_hands(player_hand, opponent_hand)
+    assert result == "player", f"Expected 'player' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"
+
+opponent_win_tests = (
+    (
+        HandType(category="pair", primary_value=7, kickers=[10, 12, 14]),
+        HandType(category="two_pair", primary_value=14, kickers=[3, 2])
+    ),
+    (
+        HandType(category="flush", primary_value=9, kickers=[]),
+        HandType(category="four_of_a_kind", primary_value=7, kickers=[12])
+    )
+)
+
+for player_hand, opponent_hand in opponent_win_tests:
+    result = oracle.compare_poker_hands(player_hand, opponent_hand)
+    assert result == "opponent", f"Expected 'opponent' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"
+
+
+tie_tests = (
+    (
+        HandType(category="straight", primary_value=14, kickers=[]),
+        HandType(category="straight", primary_value=14, kickers=[])
+    ),
+    (
+        HandType(category="flush", primary_value=8, kickers=[]),
+        HandType(category="flush", primary_value=8, kickers=[])
+    ),
+)
+
+for player_hand, opponent_hand in tie_tests:
+    result = oracle.compare_poker_hands(player_hand, opponent_hand)
+    assert result == "tie", f"Expected 'tie' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"

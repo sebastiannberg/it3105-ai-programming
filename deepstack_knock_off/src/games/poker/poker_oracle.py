@@ -273,9 +273,11 @@ class PokerOracle:
             return True, sf_value, []
         return False, 0, []
 
-    def compare_poker_hands(self, player_hand: HandType, opponent_hand: HandType):
+    def compare_poker_hands(self, player_hand: HandType, opponent_hand: HandType) -> str:
         """
-        Returns True if player_hand_class beats the opponent_hand_class
+        Returns 'player' if player_hand beats the opponent_hand,
+        'opponent' if opponent_hand beats the player_hand,
+        and 'tie' if neither hand wins.
         """
         hand_type_ranking = {
             "royal_flush": 10,
@@ -295,15 +297,26 @@ class PokerOracle:
         opponent_rank = hand_type_ranking[opponent_hand.category]
 
         if player_rank > opponent_rank:
-            return True
+            return "player"
         elif player_rank < opponent_rank:
-            return False
+            return "opponent"
         else:
             # If the hand types are the same, further comparison is needed
-            # TODO how to handle this
             if player_hand.primary_value > opponent_hand.primary_value:
-                return True
+                return "player"
             elif player_hand.primary_value < opponent_hand.primary_value:
-                return False
+                return "opponent"
             else:
-                raise ValueError(f"TODO {player_hand.category, player_hand.primary_value, player_hand.kickers} {opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers}")
+                # Ensure both hands have the same number of kickers before comparing
+                if len(player_hand.kickers) != len(opponent_hand.kickers):
+                    raise ValueError("Kicker lists are not of the same size.")
+
+                # Kickers decide outcome
+                # Compare kickers sequentially from highest to lowest
+                for player_kicker, opponent_kicker in zip(player_hand.kickers, opponent_hand.kickers):
+                    if player_kicker > opponent_kicker:
+                        return "player"
+                    elif player_kicker < opponent_kicker:
+                        return "opponent"
+                # If all primary values and kickers are equal, it's a tie
+                return "tie"
