@@ -3,7 +3,7 @@ import Action from "./Action";
 import axios from 'axios';
 
 
-const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinner, winner, roundWinner }) => {
+const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinners, winner, roundWinners }) => {
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
 
@@ -39,8 +39,8 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
           onWinnerDetermined(response.data.winner)
           setActions([]);
           setSelectedAction(null);
-        } else if (response.data.round_winner) {
-          onRoundWinner(response.data.round_winner)
+        } else if (response.data.round_winners) {
+          onRoundWinners(response.data.round_winners)
           setActions([]);
           setSelectedAction(null);
         } else {
@@ -55,7 +55,7 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
   };
 
   const buttonClass = selectedAction ? "poker-button" : "poker-button disabled";
-  const shouldDisplayActions = !winner && !roundWinner;
+  const shouldDisplayActions = !winner && !roundWinners.length;
 
   return (
     <div className="action-pane">

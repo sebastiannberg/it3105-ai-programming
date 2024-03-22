@@ -7,7 +7,6 @@ from games.poker.players.player import Player
 from games.poker.players.ai_player import AIPlayer
 from games.poker.players.human_player import HumanPlayer
 from games.poker.actions.raise_bet import RaiseBet
-from games.poker.utils.hand_type import HandType
 
 
 class PokerGameManager:
@@ -164,7 +163,7 @@ class PokerGameManager:
             if all_checked or raised_and_called:
                 return True
 
-    def proceed_stage(self) -> Optional[List[Player]]:
+    def proceed_stage(self) -> Optional[List[Dict]]:
         self.game.current_bet = 0
         for player in self.game.round_players:
             player.player_bet = 0
@@ -186,7 +185,7 @@ class PokerGameManager:
 
         return winners
 
-    def showdown(self) -> List[Player]:
+    def showdown(self) -> List[Dict]:
         # Classify each player's hand and associate it with the player
         classified_hands = {
             player: self.oracle.classify_poker_hand(player.hand, self.game.public_cards, player)
@@ -209,7 +208,17 @@ class PokerGameManager:
 
         # Update round_players to include only the winners, preserving original order
         self.game.round_players = winners
-        return winners
+
+        winners_details = [
+            {
+                "player": player.name,
+                "hand_category": classified_hands[player].category,
+                "primary_value": classified_hands[player].primary_value,
+                "kickers": classified_hands[player].kickers
+            }
+            for player in winners
+        ]
+        return winners_details
 
     def check_for_early_round_winner(self):
         """

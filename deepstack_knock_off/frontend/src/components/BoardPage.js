@@ -8,7 +8,7 @@ import Player from './Player';
 const BoardPage = () => {
   const [gameState, setGameState] = useState("");
   const [winner, setWinner] = useState(null);
-  const [roundWinner, setRoundWinner] = useState(null);
+  const [roundWinners, setRoundWinners] = useState([]);
 
   const fetchGameState = async () => {
     try {
@@ -42,10 +42,19 @@ const BoardPage = () => {
         .then(() => {
           fetchGameState()
         })
-      setRoundWinner(null);
+      setRoundWinners([]);
     } catch (error) {
       console.error('Failed to proceed to the next round:', error);
     }
+  };
+
+  // Function to render round winners details
+  const renderRoundWinnersDetails = () => {
+    return roundWinners.map((winner, index) => (
+      <div key={index}>
+        {winner.player} won the round with a {winner.hand_category}
+      </div>
+    ));
   };
 
   return(
@@ -57,21 +66,21 @@ const BoardPage = () => {
       <div className='board-section'>
         <h1>
           {winner ? `${winner} is the winner!` :
-          roundWinner ? `${roundWinner} has won the round!` :
+          roundWinners.length > 0 ? renderRoundWinnersDetails() :
           gameState.active_player ? `${Object.keys(gameState.active_player)[0]}'s turn` : "no current player"}
         </h1>
         <GameBoard gameState={gameState} />
         <button
-          className={`poker-button ${roundWinner ? '' : 'poker-button-invisible'}`}
+          className={`poker-button ${roundWinners.length > 0 ? '' : 'poker-button-invisible'}`}
           onClick={handleNextRound}
-          disabled={!roundWinner}
+          disabled={roundWinners.length === 0}
         >
           Next Round
         </button>
       </div>
       <div className='action-section'>
         <h1>Actions</h1>
-        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinner={setRoundWinner} winner={winner} roundWinner={roundWinner} />
+        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinners={setRoundWinners} winner={winner} roundWinners={roundWinners} />
       </div>
     </div>
   )

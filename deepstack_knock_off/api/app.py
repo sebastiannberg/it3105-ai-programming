@@ -90,8 +90,8 @@ def apply_action():
                 cache.set("game_manager", pickle.dumps(game_manager))
                 return jsonify({"winner": game_winner.name})
 
-            round_winner = game_manager.check_for_early_round_winner()
-            if round_winner:
+            early_round_winner = game_manager.check_for_early_round_winner()
+            if early_round_winner:
                 game_manager.process_winnings()
                 game_manager.remove_busted_players()
 
@@ -101,11 +101,17 @@ def apply_action():
                     return jsonify({"winner": game_winner_after_early_round.name})
 
                 cache.set("game_manager", pickle.dumps(game_manager))
-                return jsonify({"round_winner": round_winner.name})
+                return jsonify({"round_winners": [
+                    {
+                        "player": player.name,
+                        "early_win": True
+                    }
+                ]})
 
             if game_manager.check_for_proceed_stage():
-                winners = game_manager.proceed_stage()
-                if winners:
+                winners_details = game_manager.proceed_stage()
+                # If winners details is not None it means we had a showdown
+                if winners_details:
                     game_manager.process_winnings()
                     game_manager.remove_busted_players()
 
@@ -115,7 +121,7 @@ def apply_action():
                         return jsonify({"winner": game_winner.name})
 
                     cache.set("game_manager", pickle.dumps(game_manager))
-                    return jsonify({"round_winner": [player.name for player in winners]})
+                    return jsonify({"round_winners": winners_details})
             else:
                 game_manager.assign_active_player()
 
