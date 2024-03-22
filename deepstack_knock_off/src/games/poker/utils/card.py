@@ -14,3 +14,9 @@ class Card:
             raise ValueError(f"Invalid rank {rank}")
         if suit not in valid_suits:
             raise ValueError(f"Invalid suit {suit}")
+
+    def __repr__(self):
+        return f"Card('{self.rank}', '{self.suit}')"
+
+    def __str__(self):
+        return f"{self.rank} of {self.suit}"

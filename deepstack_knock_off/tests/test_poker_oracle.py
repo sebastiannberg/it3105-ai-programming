@@ -253,3 +253,7 @@ tie_tests = (
 for player_hand, opponent_hand in tie_tests:
     result = oracle.compare_poker_hands(player_hand, opponent_hand)
     assert result == "tie", f"Expected 'tie' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"
+
+# Test Utility Matrix
+public_cards = [Card("J", "hearts"), Card("J", "spades"), Card("A", "clubs")]
+utility_matrix = oracle.gen_utility_matrix(public_cards)
