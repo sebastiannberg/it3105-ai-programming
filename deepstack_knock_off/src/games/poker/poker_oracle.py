@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import numpy as np
 import pandas as pd
 import itertools
@@ -9,6 +9,7 @@ from random import sample
 from games.poker.utils.deck import Deck
 from games.poker.utils.card import Card
 from games.poker.utils.hand_type import HandType
+from games.poker.players.player import Player
 
 class PokerOracle:
 
@@ -27,6 +28,18 @@ class PokerOracle:
             "Q": 12,
             "K": 13,
             "A": 14
+        }
+        self.hand_type_ranking = {
+            "royal_flush": 10,
+            "straight_flush": 9,
+            "four_of_a_kind": 8,
+            "full_house": 7,
+            "flush": 6,
+            "straight": 5,
+            "three_of_a_kind": 4,
+            "two_pair": 3,
+            "pair": 2,
+            "high_card": 1
         }
 
     def gen_deck(self, num_cards: int, shuffled: bool) -> Deck:
@@ -99,59 +112,59 @@ class PokerOracle:
 
         return utility_matrix
 
-    def classify_poker_hand(self, hand: List[Card], public_cards: List[Card]) -> HandType:
+    def classify_poker_hand(self, hand: List[Card], public_cards: List[Card], player: Optional[Player] = None) -> HandType:
         # All cards length is 5, 6 or 7
         all_cards = hand + public_cards
 
         # Check for a Royal Flush
         rf_success, rf_value, rf_kickers = self.is_royal_flush(all_cards)
         if rf_success:
-            return HandType(category="royal_flush", primary_value=rf_value, kickers=rf_kickers)
+            return HandType(category="royal_flush", primary_value=rf_value, kickers=rf_kickers, player=player)
 
         # Check for a Straight Flush
         sf_success, sf_value, sf_kickers = self.is_straight_flush(all_cards)
         if sf_success:
-            return HandType(category="straight_flush", primary_value=sf_value, kickers=sf_kickers)
+            return HandType(category="straight_flush", primary_value=sf_value, kickers=sf_kickers, player=player)
 
         # Check for a Four of a Kind
         foak_success, foak_value, foak_kickers = self.is_four_of_a_kind(all_cards)
         if foak_success:
-            return HandType(category="four_of_a_kind", primary_value=foak_value, kickers=foak_kickers)
+            return HandType(category="four_of_a_kind", primary_value=foak_value, kickers=foak_kickers, player=player)
 
         # Check for a Full House
         fh_success, fh_value, fh_kickers = self.is_full_house(all_cards)
         if fh_success:
-            return HandType(category="full_house", primary_value=fh_value, kickers=fh_kickers)
+            return HandType(category="full_house", primary_value=fh_value, kickers=fh_kickers, player=player)
 
         # Check for a Flush
         f_success, f_value, f_kickers = self.is_flush(all_cards)
         if f_success:
-            return HandType(category="flush", primary_value=f_value, kickers=f_kickers)
+            return HandType(category="flush", primary_value=f_value, kickers=f_kickers, player=player)
 
         # Check for a Straight
         s_success, s_value, s_kickers =  self.is_straight(all_cards)
         if s_success:
-            return HandType(category="straight", primary_value=s_value, kickers=s_kickers)
+            return HandType(category="straight", primary_value=s_value, kickers=s_kickers, player=player)
 
         # Check for Three of a Kind
         toak_success, toak_value, toak_kickers = self.is_three_of_a_kind(all_cards)
         if toak_success:
-            return HandType(category="three_of_a_kind", primary_value=toak_value, kickers=toak_kickers)
+            return HandType(category="three_of_a_kind", primary_value=toak_value, kickers=toak_kickers, player=player)
 
         # Check for Two Pair
         tp_success, tp_value, tp_kickers = self.is_two_pair(all_cards)
         if tp_success:
-            return HandType(category="two_pair", primary_value=tp_value, kickers=tp_kickers)
+            return HandType(category="two_pair", primary_value=tp_value, kickers=tp_kickers, player=player)
 
         # Check for Pair
         p_success, p_value, p_kickers = self.is_pair(all_cards)
         if p_success:
-            return HandType(category="pair", primary_value=p_value, kickers=p_kickers)
+            return HandType(category="pair", primary_value=p_value, kickers=p_kickers, player=player)
 
         # Check for High Card
         hc_success, hc_value, hc_kickers = self.is_high_card(all_cards)
         if hc_success:
-            return HandType(category="high_card", primary_value=hc_value, kickers=hc_kickers)
+            return HandType(category="high_card", primary_value=hc_value, kickers=hc_kickers, player=player)
 
         raise ValueError("Failure when classifying poker hand")
 
@@ -305,22 +318,9 @@ class PokerOracle:
         'opponent' if opponent_hand beats the player_hand,
         and 'tie' if neither hand wins.
         """
-        hand_type_ranking = {
-            "royal_flush": 10,
-            "straight_flush": 9,
-            "four_of_a_kind": 8,
-            "full_house": 7,
-            "flush": 6,
-            "straight": 5,
-            "three_of_a_kind": 4,
-            "two_pair": 3,
-            "pair": 2,
-            "high_card": 1
-        }
-
         # Compare the hand types based on their ranking
-        player_rank = hand_type_ranking[player_hand.category]
-        opponent_rank = hand_type_ranking[opponent_hand.category]
+        player_rank = self.hand_type_ranking[player_hand.category]
+        opponent_rank = self.hand_type_ranking[opponent_hand.category]
 
         if player_rank > opponent_rank:
             return "player"

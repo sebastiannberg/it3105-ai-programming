@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Optional
 
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
@@ -7,6 +7,7 @@ from games.poker.players.player import Player
 from games.poker.players.ai_player import AIPlayer
 from games.poker.players.human_player import HumanPlayer
 from games.poker.actions.raise_bet import RaiseBet
+from games.poker.utils.hand_type import HandType
 
 
 class PokerGameManager:
@@ -146,12 +147,8 @@ class PokerGameManager:
                 if any(player.last_raised for player in self.game.round_players):
                     # Find the player who last raised
                     last_raised_player = next(player for player in self.game.round_players if player.last_raised)
-                    print(last_raised_player)
-                    print([player.has_called for player in self.game.round_players])
                     # Check if all other players have called
-                    print([player for player in self.game.round_players])
                     raised_and_called = all((player.has_called or player is last_raised_player) for player in self.game.round_players)
-                print(raised_and_called)
                 if all_checked or raised_and_called:
                     return True
         else:
@@ -167,28 +164,52 @@ class PokerGameManager:
             if all_checked or raised_and_called:
                 return True
 
-    def proceed_stage(self):
+    def proceed_stage(self) -> Optional[List[Player]]:
         self.game.current_bet = 0
         for player in self.game.round_players:
             player.player_bet = 0
             player.has_checked = False
             player.has_called = False
             player.last_raised = False
-        if self.game.stage == "preflop" or self.game.stage == "flop" or self.game.stage == "turn":
-            if self.game.stage == "preflop":
-                self.game.stage = "flop"
-            elif self.game.stage == "flop":
-                self.game.stage = "turn"
-            elif self.game.stage == "turn":
-                self.game.stage = "river"
+
+        winners = None
+        if self.game.stage in ["preflop", "flop", "turn"]:
+            # Advance the game stage
+            stage_transitions = {"preflop": "flop", "flop": "turn", "turn": "river"}
+            self.game.stage = stage_transitions.get(self.game.stage, self.game.stage)
+            # Deal cards and assign the active player for the new stage
             self.deal_cards()
             self.assign_active_player(stage_change=True)
         elif self.game.stage == "river":
-            pass
-            # Poker Oracle time and self.showdown()
+            # Showdown and determine winners
+            winners = self.showdown()
 
-    def showdown(self):
-        pass
+        return winners
+
+    def showdown(self) -> List[Player]:
+        # Classify each player's hand and associate it with the player
+        classified_hands = {
+            player: self.oracle.classify_poker_hand(player.hand, self.game.public_cards, player)
+            for player in self.game.round_players
+        }
+
+        # Find the best hand to compare with others
+        best_hand = max(classified_hands.values(), key=lambda hand: (
+            self.oracle.hand_type_ranking[hand.category],
+            hand.primary_value,
+            hand.kickers
+        ))
+
+        # Filter winners based on the comparison, preserving original order
+        winners = []
+        for player, hand in classified_hands.items():
+            comparison_result = self.oracle.compare_poker_hands(hand, best_hand)
+            if comparison_result in ["player", "tie"]:
+                winners.append(player)
+
+        # Update round_players to include only the winners, preserving original order
+        self.game.round_players = winners
+        return winners
 
     def check_for_early_round_winner(self):
         """
@@ -200,11 +221,8 @@ class PokerGameManager:
         else:
             return None
 
+
     def process_winnings(self):
-        """
-        Assumes there are one player left in current round that
-        is the winner of the round
-        """
         winnings_per_player = self.game.pot // len(self.game.round_players)
 
         for player in self.game.round_players:

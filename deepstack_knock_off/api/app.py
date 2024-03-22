@@ -83,7 +83,6 @@ def apply_action():
 
         if selected_action:
             player = game_manager.find_round_player_by_name(selected_action.player.name)
-            print(player.name, "in API")
             PokerStateManager.apply_action(game_manager.game, player, selected_action)
 
             game_winner = game_manager.check_for_game_winner()
@@ -105,7 +104,18 @@ def apply_action():
                 return jsonify({"round_winner": round_winner.name})
 
             if game_manager.check_for_proceed_stage():
-                game_manager.proceed_stage()
+                winners = game_manager.proceed_stage()
+                if winners:
+                    game_manager.process_winnings()
+                    game_manager.remove_busted_players()
+
+                    game_winner = game_manager.check_for_game_winner()
+                    if game_winner:
+                        cache.set("game_manager", pickle.dumps(game_manager))
+                        return jsonify({"winner": game_winner.name})
+
+                    cache.set("game_manager", pickle.dumps(game_manager))
+                    return jsonify({"round_winner": [player.name for player in winners]})
             else:
                 game_manager.assign_active_player()
 
