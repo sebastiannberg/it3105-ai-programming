@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Action from "./Action";
 import axios from 'axios';
 
@@ -6,6 +6,7 @@ import axios from 'axios';
 const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinners, onAiDecision, winner, roundWinners, aiDecision }) => {
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
+  const count = useRef(0);
 
   const fetchLegalActions = async () => {
     try {
@@ -18,9 +19,11 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
 
   const fetchAIDecision = useCallback(async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/ai-decision")
-      console.log(response.data)
-      onAiDecision(response.data)
+      if (count.current !== 0) {
+        const response = await axios.get("http://127.0.0.1:5000/ai-decision")
+        onAiDecision(response.data)
+      }
+      count.current++;
     } catch (error) {
       console.error("Failed to fetch AI decision:", error)
     }
