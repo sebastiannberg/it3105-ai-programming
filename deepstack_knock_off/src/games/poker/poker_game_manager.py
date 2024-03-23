@@ -15,13 +15,6 @@ class PokerGameManager:
         self.rules = rules
         self.oracle = oracle
 
-    def start_game(self):
-        self.init_poker_game()
-        self.assign_blind_roles()
-        self.perform_blind_bets()
-        self.deal_cards()
-        self.assign_active_player()
-
     def init_poker_game(self):
         deck = self.oracle.gen_deck(self.rules["deck_size"], shuffled=True)
         players = self.gen_poker_players(num_ai_players=self.rules["num_ai_players"], num_human_players=self.rules["num_human_players"])
@@ -268,74 +261,3 @@ class PokerGameManager:
             return self.game.game_players[0]
         else:
             return None
-
-    def jsonify_poker_game(self) -> Dict:
-        """
-        Generates a dictionary containing information from the game state that
-        can be turned into json
-        """
-        if self.game.game_players:
-            game_players_dict = {}
-            for player in self.game.game_players:
-                game_players_dict[player.name] = {
-                    "hand": [{"rank": card.rank, "suit": card.suit} for card in player.hand],
-                    "chips": player.chips,
-                    "player_bet": player.player_bet
-                }
-        else:
-            game_players_dict = None
-
-        if self.game.round_players:
-            round_players_dict = {}
-            for player in self.game.round_players:
-                round_players_dict[player.name] = {
-                    "hand": [{"rank": card.rank, "suit": card.suit} for card in player.hand],
-                    "chips": player.chips,
-                    "player_bet": player.player_bet
-                }
-        else:
-            round_players_dict = None
-
-        if self.game.deck:
-            deck_dict = {"cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.deck.cards]}
-        else:
-            deck_dict = None
-
-        if self.game.small_blind_player and self.game.big_blind_player:
-            small_blind_player_dict = {self.game.small_blind_player.name: {
-                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.small_blind_player.hand],
-                "chips": self.game.small_blind_player.chips,
-                "player_bet": self.game.small_blind_player.player_bet
-            }}
-            big_blind_player_dict = {self.game.big_blind_player.name: {
-                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.big_blind_player.hand],
-                "chips": self.game.big_blind_player.chips,
-                "player_bet": self.game.big_blind_player.player_bet
-            }}
-        else:
-            small_blind_player_dict = None
-            big_blind_player_dict = None
-
-        if self.game.active_player:
-            active_player_dict = {self.game.active_player.name: {
-                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.active_player.hand],
-                "chips": self.game.active_player.chips,
-                "player_bet": self.game.active_player.player_bet
-            }}
-        else:
-            active_player_dict = None
-
-        return {
-            "game_players": game_players_dict,
-            "round_players": round_players_dict,
-            "deck": deck_dict,
-            "stage": self.game.stage,
-            "public_cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.public_cards],
-            "pot": self.game.pot,
-            "current_bet": self.game.current_bet,
-            "small_blind_amount": self.game.small_blind_amount,
-            "big_blind_amount": self.game.big_blind_amount,
-            "small_blind_player": small_blind_player_dict,
-            "big_blind_player": big_blind_player_dict,
-            "active_player": active_player_dict
-        }
