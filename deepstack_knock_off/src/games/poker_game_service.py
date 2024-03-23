@@ -91,7 +91,6 @@ class PokerGameService:
             selected_action = self.game_manager.game.active_player.make_decision_rollouts(self.game_manager.oracle, self.game_manager.game.public_cards, len(self.game_manager.game.round_players)-1, legal_actions)
         elif self.game_manager.rules["ai_strategy"] == "resolve":
             raise NotImplementedError()
-        print(selected_action)
         return selected_action.to_dict()
 
     def jsonify_poker_game(self) -> Dict:
