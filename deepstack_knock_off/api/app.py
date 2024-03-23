@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_caching import Cache
-from typing import List
 
 import pickle
 import sys
@@ -9,10 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from games.poker.poker_game_manager import PokerGameManager
-from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
-from games.poker.actions.action import Action
-from games.poker.players.ai_player import AIPlayer
 from games.poker_game_service import PokerGameService
 
 app = Flask(__name__)
