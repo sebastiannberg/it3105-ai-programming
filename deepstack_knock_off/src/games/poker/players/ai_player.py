@@ -18,11 +18,19 @@ class AIPlayer(Player):
     def make_decision_rollouts(self, oracle: PokerOracle, public_cards: List[Card], num_opponent_players: int, legal_actions: List[Action]) -> Action:
         win_prob, tie_prob, lose_prob = oracle.perform_rollouts(self.hand, public_cards, num_opponent_players)
 
-        # Fold if probability of winning is less than 0.5
+        # Fold if probability of winning is less than 0.5 but Check if possible
         if win_prob < 0.5:
+            check = None
+            fold = None
             for action in legal_actions:
+                if isinstance(action, Check):
+                    check = action
                 if isinstance(action, Fold):
-                    return action
+                    fold = action
+            if check:
+                return check
+            else:
+                return fold
 
         all_in_action = [action for action in legal_actions if isinstance(action, RaiseBet) and action.raise_type == "all_in"]
         # All in if probability of winning is higher than 0.85
