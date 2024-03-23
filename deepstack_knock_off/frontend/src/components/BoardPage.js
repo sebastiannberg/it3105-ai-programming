@@ -48,11 +48,13 @@ const BoardPage = () => {
     }
   };
 
-  // Function to render round winners details
   const renderRoundWinnersDetails = () => {
     return roundWinners.map((winner, index) => (
       <div key={index}>
-        {winner.player} won the round with a {winner.hand_category}
+        {winner.hand_category ?
+          `${winner.player} won the round with a ${winner.hand_category}` :
+          `${winner.player} won the round`
+        }
       </div>
     ));
   };
