@@ -77,7 +77,7 @@ const BoardPage = () => {
           (winner || roundWinners.length > 0) ? <p>&nbsp;</p> :
           // Then check if it's AI's turn
           (gameState.active_player && Object.keys(gameState.active_player)[0]?.includes("AI")) ?
-            (aiDecision && aiDecision.name ? <p>AI choose to play {aiDecision.name}</p> : <p>AI calculating decision...</p>)
+            (aiDecision && aiDecision.name ? <p>AI choose to {aiDecision.name}</p> : <p>AI calculating decision...</p>)
             :
             <p>&nbsp;</p>
         }
