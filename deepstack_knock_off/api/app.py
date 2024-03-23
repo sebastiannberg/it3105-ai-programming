@@ -12,6 +12,7 @@ from games.poker.poker_game_manager import PokerGameManager
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
 from games.poker.actions.action import Action
+from games.poker.players.ai_player import AIPlayer
 
 app = Flask(__name__)
 CORS(app)
@@ -142,6 +143,23 @@ def next_round():
         return jsonify({"message": "Next round started successfully."}), 200
     else:
         return jsonify({"error": "Game not started or not found."}), 404
+
+@app.route("/ai-decision", methods=["POST"])
+def ai_decision():
+    serialized_game_manager = cache.get("game_manager")
+    if not serialized_game_manager:
+        return jsonify({"error": "Game not started."}), 404
+
+    game_manager: PokerGameManager = pickle.loads(serialized_game_manager)
+    if not isinstance(game_manager.game.active_player, AIPlayer):
+        return jsonify({"error": "It's not AI's turn."}), 400
+
+    decision = game_manager.game.active_player.make_decision_rollouts(game_manager.game)
+    # Apply the decision TODO
+
+    cache.set("game_manager", pickle.dumps(game_manager))
+    return jsonify({"message": "AI decision made.", "decision": decision}), 200
+
 
 
 
