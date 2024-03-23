@@ -347,40 +347,51 @@ class PokerOracle:
                 # If all primary values and kickers are equal, it's a tie
                 return "tie"
 
-    def perform_rollouts(self, player_hand: List[Card], public_cards: List[Card], num_rollouts: int = 5000) -> float:
+    def perform_rollouts(self, player_hand: List[Card], public_cards: List[Card], num_opponent_players: int = 1, num_rollouts: int = 5000) -> float:
         if len(public_cards) not in (0, 3, 4, 5):
             raise ValueError("Length of public cards must be 0, 3, 4 or 5 when performing rollouts")
         if len(player_hand) != 2:
             raise ValueError("Length of player hand should be 2 when performing rollouts")
 
-        wins = 0
-        ties = 0
-
+        wins, ties, losses = 0, 0, 0
         for _ in range(num_rollouts):
+            # Generate new deck for rollout
             deck = self.gen_deck(52, shuffled=True)
-            deck.cards = [card for card in deck.cards if card not in player_hand + public_cards]
+            # Create a set for easy comparison
+            player_and_public_cards_set = {(card.rank, card.suit) for card in player_hand + public_cards}
+            # Remove player cards and public cards from deck
+            deck.cards = [card for card in deck.cards if (card.rank, card.suit) not in player_and_public_cards_set]
 
-            opponent_hand = sample(deck.cards, 2)
-            deck.cards = [card for card in deck.cards if card not in opponent_hand]
+            # Deal hands to opponents
+            opponent_cards = sample(deck.cards, 2 * num_opponent_players)
+            deck.cards = [card for card in deck.cards if card not in opponent_cards]
+            opponent_hands = [opponent_cards[i:i+2] for i in range(0, len(opponent_cards), 2)]
 
+            # Deal additional public cards if necessary
             additional_cards_needed = 5 - len(public_cards)
-            if additional_cards_needed > 0:
-                additional_public_cards = sample(deck.cards, additional_cards_needed)
-                final_board = public_cards + additional_public_cards
+            final_board = public_cards + sample(deck.cards, additional_cards_needed) if additional_cards_needed > 0 else public_cards
+
+            # Evaluate the player's hand against each opponent
+            player_hand_type = self.classify_poker_hand(player_hand, final_board)
+            all_hands = [self.classify_poker_hand(hand, final_board) for hand in opponent_hands] + [player_hand_type]
+
+            # Determine the best hand and possible wins or ties
+            best_hand = max(all_hands, key=lambda hand: (self.hand_type_ranking[hand.category], hand.primary_value, hand.kickers))
+            tie_count = 0
+            for hand in all_hands:
+                if hand.category == best_hand.category and hand.primary_value == best_hand.primary_value and hand.kickers == best_hand.kickers:
+                    tie_count += 1
+
+            if player_hand_type.category == best_hand.category and player_hand_type.primary_value == best_hand.primary_value and player_hand_type.kickers == best_hand.kickers:
+                if tie_count == 1:  # No ties, player wins
+                    wins += 1
+                else:  # Player's hand is part of a tie
+                    ties += 1
             else:
-                final_board = public_cards
+                losses += 1
 
-            # Evaluate hands
-            player_hand_rank = self.classify_poker_hand(player_hand, final_board)
-            opponent_hand_rank = self.classify_poker_hand(opponent_hand, final_board)
-
-            # Compare hands and track outcomes
-            result = self.compare_poker_hands(player_hand_rank, opponent_hand_rank)
-            if result == "player":
-                wins += 1
-            elif result == "tie":
-                ties += 1
-
-        # Calculate win probability
-        win_probability = (wins + 0.5 * ties) / num_rollouts
-        return win_probability
+        # Calculate probabilities
+        win_probability = wins / num_rollouts
+        tie_probability = ties / num_rollouts
+        lose_probability = losses / num_rollouts
+        return win_probability, tie_probability, lose_probability
