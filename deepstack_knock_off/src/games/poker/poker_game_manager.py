@@ -15,29 +15,32 @@ class PokerGameManager:
         self.rules = rules
         self.oracle = oracle
 
+    def start_game(self):
+        self.init_poker_game()
+        self.assign_blind_roles()
+        self.perform_blind_bets()
+        self.deal_cards()
+        self.assign_active_player()
+
     def init_poker_game(self):
         deck = self.oracle.gen_deck(self.rules["deck_size"], shuffled=True)
         players = self.gen_poker_players(num_ai_players=self.rules["num_ai_players"], num_human_players=self.rules["num_human_players"])
         init_state = PokerStateManager.gen_init_state(players, deck, self.rules["small_blind_amount"], self.rules["big_blind_amount"])
         self.game: PokerState = init_state
 
-    def start_game(self):
-        # TODO
-        pass
-
-    def gen_poker_players(self, num_ai_players, num_human_players):
+    def gen_poker_players(self, num_ai_players: int, num_human_players: int) -> List[Player]:
         if num_ai_players + num_human_players > 6:
             raise ValueError("Total amount of players should be less than or equal to 6")
         if num_ai_players + num_human_players < 2:
             raise ValueError("Total amount of players should be at least 2")
+
         players = []
-        initial_chips = self.rules["initial_chips"]
         # Generate AI players
         for i in range(num_ai_players):
-            players.append(AIPlayer(name=f"AI Player {i+1}", initial_chips=initial_chips))
+            players.append(AIPlayer(name=f"AI Player {i+1}", initial_chips=self.rules["initial_chips"]))
         # Generate human players
         for i in range(num_human_players):
-            players.append(HumanPlayer(name=f"Human Player {i+1}", initial_chips=initial_chips))
+            players.append(HumanPlayer(name=f"Human Player {i+1}", initial_chips=self.rules["initial_chips"]))
         return players
 
     def find_round_player_by_name(self, player_name: str) -> Player:
@@ -65,7 +68,6 @@ class PokerGameManager:
 
         self.game.small_blind_player = next_small_blind_player
         self.game.big_blind_player = next_big_blind_player
-
 
     def perform_blind_bets(self):
         current_small_blind_player = self.game.small_blind_player
@@ -221,15 +223,10 @@ class PokerGameManager:
         return winners_details
 
     def check_for_early_round_winner(self):
-        """
-        Checks for winner and return player.
-        If no winner it returns None
-        """
         if len(self.game.round_players) == 1:
             return self.game.round_players[0]
         else:
             return None
-
 
     def process_winnings(self):
         winnings_per_player = self.game.pot // len(self.game.round_players)
@@ -272,7 +269,11 @@ class PokerGameManager:
         else:
             return None
 
-    def jsonify_poker_game(self):
+    def jsonify_poker_game(self) -> Dict:
+        """
+        Generates a dictionary containing information from the game state that
+        can be turned into json
+        """
         if self.game.game_players:
             game_players_dict = {}
             for player in self.game.game_players:

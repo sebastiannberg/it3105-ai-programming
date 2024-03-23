@@ -30,12 +30,11 @@ def rules():
 def start_game():
     rules = request.json
     try:
+        # Create new game manager object
         game_manager = PokerGameManager(rules, PokerOracle())
-        game_manager.init_poker_game()
-        game_manager.assign_blind_roles()
-        game_manager.perform_blind_bets()
-        game_manager.deal_cards()
-        game_manager.assign_active_player()
+        # Start game
+        game_manager.start_game()
+        # Save game manager for later use
         cache.set("game_manager", pickle.dumps(game_manager))
         return jsonify({"message": "Game started successfully."}), 200
     except Exception as e:
