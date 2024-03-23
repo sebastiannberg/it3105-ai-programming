@@ -72,7 +72,7 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
       const timer = setTimeout(() => {
         applyAIAction(aiDecision);
         onAiDecision(null); // Reset aiDecision to null after applying
-      }, 3000); // Wait 3 seconds
+      }, 4000); // Wait 4 seconds
 
       return () => clearTimeout(timer); // Clean up the timeout if the component unmounts
     }
@@ -114,21 +114,21 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
     setSelectedAction(null);
   };
 
+  const isAITurn = gameState.active_player && Object.keys(gameState.active_player)[0].includes("AI");
   const buttonClass = selectedAction ? "poker-button" : "poker-button disabled";
-  const shouldDisplayActions = !winner && !roundWinners.length;
 
   return (
     <div className="action-pane">
       <div className="scroll-box">
         <ul>
-          {shouldDisplayActions && actions.map((action, index) => (
+          {(!isAITurn && actions.length > 0) ? actions.map((action, index) => (
             <Action
               key={index}
               action={action}
               onClick={() => handleActionClick(action)}
               isSelected={selectedAction === action}
             />
-          ))}
+          )) : null}
         </ul>
       </div>
       <button className={buttonClass} onClick={applySelectedAction} disabled={!selectedAction || actions.length === 0}>Apply</button>

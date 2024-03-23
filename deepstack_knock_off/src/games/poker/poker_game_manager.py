@@ -16,8 +16,11 @@ class PokerGameManager:
         self.oracle = oracle
 
     def init_poker_game(self):
-        deck = self.oracle.gen_deck(self.rules["deck_size"], shuffled=True)
         players = self.gen_poker_players(num_ai_players=self.rules["num_ai_players"], num_human_players=self.rules["num_human_players"])
+        if len(players) > 2 and self.rules["ai_strategy"] == "resolve":
+            raise ValueError("Cannot use resolver when there are more than 2 players")
+
+        deck = self.oracle.gen_deck(self.rules["deck_size"], shuffled=True)
         init_state = PokerStateManager.gen_init_state(players, deck, self.rules["small_blind_amount"], self.rules["big_blind_amount"])
         self.game: PokerState = init_state
 
