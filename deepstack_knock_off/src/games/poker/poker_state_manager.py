@@ -116,3 +116,12 @@ class PokerStateManager:
                     player_temp.has_called = False
                     player_temp.last_raised = False
                 player.poker_raise()
+
+    @staticmethod
+    def gen_subtree_root_from_state():
+        pass
+
+    @staticmethod
+    # TODO maybe not returning list of pokerstate, depends on what is used as root in subtree
+    def gen_legal_child_states() -> List[PokerState]:
+        pass
