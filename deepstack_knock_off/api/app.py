@@ -153,13 +153,17 @@ def ai_decision():
     if not isinstance(game_manager.game.active_player, AIPlayer):
         return jsonify({"error": "It's not AI's turn."}), 400
 
-    decision = game_manager.game.active_player.make_decision_rollouts(game_manager.game)
-    # Apply the decision TODO
+    legal_actions = PokerStateManager.find_all_legal_actions(game_manager.game, game_manager.game.active_player, game_manager.rules)
+
+    if game_manager.rules["ai_strategy"] == "rollout":
+        selected_action = game_manager.game.active_player.make_decision_rollouts(game_manager.oracle, game_manager.game.public_cards, len(game_manager.game.round_players)-1, legal_actions)
+
+    print(selected_action.name, selected_action.player)
+
+    # Apply the action
 
     cache.set("game_manager", pickle.dumps(game_manager))
-    return jsonify({"message": "AI decision made.", "decision": decision}), 200
-
-
+    return jsonify({"message": "AI decision made.", "action_name": selected_action.name}), 200
 
 
 if __name__ == "__main__":
