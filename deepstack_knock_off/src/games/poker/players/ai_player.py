@@ -17,7 +17,7 @@ class AIPlayer(Player):
 
     def make_decision_rollouts(self, oracle: PokerOracle, public_cards: List[Card], num_opponent_players: int, legal_actions: List[Action]) -> Action:
         win_prob, tie_prob, lose_prob = oracle.perform_rollouts(self.hand, public_cards, num_opponent_players)
-
+        print(win_prob, tie_prob, lose_prob)
         # Fold if probability of winning is less than 0.5 but Check if possible
         if win_prob < 0.5:
             check = None

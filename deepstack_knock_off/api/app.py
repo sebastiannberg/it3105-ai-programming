@@ -102,6 +102,7 @@ def ai_decision():
         game_service = PokerGameService(game_manager)
 
         ai_action = game_service.ai_decision()
+        print(ai_action)
         if ai_action:
             return jsonify(ai_action), 200
         else:
