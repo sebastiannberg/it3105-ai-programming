@@ -103,7 +103,7 @@ def apply_action():
                 cache.set("game_manager", pickle.dumps(game_manager))
                 return jsonify({"round_winners": [
                     {
-                        "player": player.name,
+                        "player": early_round_winner.name,
                         "early_win": True
                     }
                 ]})

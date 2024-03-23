@@ -36,6 +36,7 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
       .then(response => {
         console.log("Action applied successfully:", response.data);
         if (response.data.winner) {
+          // A game winner has been determined
           onWinnerDetermined(response.data.winner)
           setActions([]);
           setSelectedAction(null);
