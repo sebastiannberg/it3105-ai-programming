@@ -9,6 +9,7 @@ const BoardPage = () => {
   const [gameState, setGameState] = useState("");
   const [winner, setWinner] = useState(null);
   const [roundWinners, setRoundWinners] = useState([]);
+  const [aiDecision, setAiDecision] = useState(null);
 
   const fetchGameState = async () => {
     try {
@@ -71,6 +72,15 @@ const BoardPage = () => {
           roundWinners.length > 0 ? renderRoundWinnersDetails() :
           gameState.active_player ? `${Object.keys(gameState.active_player)[0]}'s turn` : "no current player"}
         </h1>
+        {
+          // Check if there's a winner or round winners first
+          (winner || roundWinners.length > 0) ? <p>&nbsp;</p> :
+          // Then check if it's AI's turn
+          (gameState.active_player && Object.keys(gameState.active_player)[0]?.includes("AI")) ?
+            (aiDecision && aiDecision.name ? <p>AI choose to play {aiDecision.name}</p> : <p>AI calculating decision...</p>)
+            :
+            <p>&nbsp;</p>
+        }
         <GameBoard gameState={gameState} />
         <button
           className={`poker-button ${roundWinners.length > 0 ? '' : 'poker-button-invisible'}`}
@@ -82,7 +92,7 @@ const BoardPage = () => {
       </div>
       <div className='action-section'>
         <h1>Actions</h1>
-        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinners={setRoundWinners} winner={winner} roundWinners={roundWinners} />
+        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinners={setRoundWinners} onAiDecision={setAiDecision} winner={winner} roundWinners={roundWinners} aiDecision={aiDecision} />
       </div>
     </div>
   )

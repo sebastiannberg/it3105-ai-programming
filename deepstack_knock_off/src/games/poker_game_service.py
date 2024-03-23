@@ -3,6 +3,7 @@ from typing import Dict, List
 from games.poker.poker_game_manager import PokerGameManager
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
+from games.poker.players.ai_player import AIPlayer
 
 
 class PokerGameService:
@@ -80,8 +81,18 @@ class PokerGameService:
     def next_round(self):
         self.game_manager.end_round_next_round()
 
-    def ai_decision(self):
-        pass
+    def ai_decision(self) -> Dict:
+        if not isinstance(self.game_manager.game.active_player, AIPlayer):
+            return None
+
+        legal_actions = PokerStateManager.find_all_legal_actions(self.game_manager.game, self.game_manager.game.active_player, self.game_manager.rules)
+
+        if self.game_manager.rules["ai_strategy"] == "rollout":
+            selected_action = self.game_manager.game.active_player.make_decision_rollouts(self.game_manager.oracle, self.game_manager.game.public_cards, len(self.game_manager.game.round_players)-1, legal_actions)
+        elif self.game_manager.rules["ai_strategy"] == "resolve":
+            raise NotImplementedError()
+        print(selected_action)
+        return selected_action.to_dict()
 
     def jsonify_poker_game(self) -> Dict:
         """
