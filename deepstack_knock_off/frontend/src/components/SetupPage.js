@@ -10,6 +10,7 @@ const SetupPage = () => {
   const fetchPlaceholders = async () => {
     try {
       const response = await axios.get("http://127.0.0.1:5000/placeholders");
+      console.log(response.data)
       setConfig(response.data.config);
       setRules(response.data.rules);
     } catch (error) {
