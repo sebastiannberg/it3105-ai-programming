@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_caching import Cache
 
@@ -30,9 +30,9 @@ def rules():
 
 @app.route("/start-game", methods=["POST"])
 def start_game():
-    rules = request.json
+    data = request.json
     try:
-        game_manager = PokerGameManager(rules, PokerOracle())
+        game_manager = PokerGameManager(data["config"], data["rules"], PokerOracle())
         game_service = PokerGameService(game_manager)
 
         game_service.start_game()
