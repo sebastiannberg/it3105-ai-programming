@@ -11,17 +11,18 @@ from games.poker.actions.raise_bet import RaiseBet
 
 class PokerGameManager:
 
-    def __init__(self, rules: Dict, oracle: PokerOracle):
-        self.rules = rules
+    def __init__(self, poker_config: Dict, poker_rules: Dict, oracle: PokerOracle):
+        self.poker_config = poker_config
+        self.poker_rules = poker_rules
         self.oracle = oracle
 
     def init_poker_game(self):
-        players = self.gen_poker_players(num_ai_players=self.rules["num_ai_players"], num_human_players=self.rules["num_human_players"])
-        if len(players) > 2 and self.rules["ai_strategy"] == "resolve":
+        players = self.gen_poker_players(num_ai_players=self.poker_config["num_ai_players"], num_human_players=self.poker_config["num_human_players"])
+        if len(players) > 2 and self.poker_config["enable_resolver"] == True:
             raise ValueError("Cannot use resolver when there are more than 2 players")
 
-        deck = self.oracle.gen_deck(self.rules["deck_size"], shuffled=True)
-        init_state = PokerStateManager.gen_init_state(players, deck, self.rules["small_blind_amount"], self.rules["big_blind_amount"])
+        deck = self.oracle.gen_deck(self.poker_rules["deck_size"], shuffled=True)
+        init_state = PokerStateManager.gen_init_state(players, deck, self.poker_config["small_blind_amount"], self.poker_config["big_blind_amount"])
         self.game: PokerState = init_state
 
     def gen_poker_players(self, num_ai_players: int, num_human_players: int) -> List[Player]:
@@ -33,10 +34,10 @@ class PokerGameManager:
         players = []
         # Generate AI players
         for i in range(num_ai_players):
-            players.append(AIPlayer(name=f"AI Player {i+1}", initial_chips=self.rules["initial_chips"]))
+            players.append(AIPlayer(name=f"AI Player {i+1}", initial_chips=self.poker_config["initial_chips"]))
         # Generate human players
         for i in range(num_human_players):
-            players.append(HumanPlayer(name=f"Human Player {i+1}", initial_chips=self.rules["initial_chips"]))
+            players.append(HumanPlayer(name=f"Human Player {i+1}", initial_chips=self.poker_config["initial_chips"]))
         return players
 
     def find_round_player_by_name(self, player_name: str) -> Player:

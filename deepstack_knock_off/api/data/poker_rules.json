@@ -1,0 +1,7 @@
+{
+    "deck_size": 52,
+    "fixed_raise": 10,
+    "max_num_raises_per_stage": 4,
+    "max_pot_size": 20,
+    "all_in_disabled": true
+}
