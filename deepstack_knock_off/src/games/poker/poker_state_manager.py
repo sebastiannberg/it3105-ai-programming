@@ -9,6 +9,7 @@ class PokerStateManager:
     def __init__(self, poker_rules: Dict):
         self.poker_rules = poker_rules
 
+    # TODO
     def gen_state_from_game(self, poker_game: PokerGame) -> PokerState:
         pass
 

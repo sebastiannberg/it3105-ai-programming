@@ -15,14 +15,14 @@ class AIPlayer(Player):
     def __init__(self, name, initial_chips):
         super().__init__(name, initial_chips)
 
-    def make_decision_rollouts(self, oracle: PokerOracle, public_cards: List[Card], num_opponent_players: int, legal_actions: List[Action]) -> Action:
+    def make_decision_rollouts(self, oracle: PokerOracle, public_cards: List[Card], num_opponent_players: int) -> Action:
         win_prob, tie_prob, lose_prob = oracle.perform_rollouts(self.hand, public_cards, num_opponent_players)
         print(win_prob, tie_prob, lose_prob)
         # Fold if probability of winning is less than 0.5 but Check if possible
         if win_prob < 0.5:
             check = None
             fold = None
-            for action in legal_actions:
+            for action in self.legal_actions:
                 if isinstance(action, Check):
                     check = action
                 if isinstance(action, Fold):
@@ -32,15 +32,15 @@ class AIPlayer(Player):
             else:
                 return fold
 
-        all_in_action = [action for action in legal_actions if isinstance(action, RaiseBet) and action.raise_type == "all_in"]
+        all_in_action = [action for action in self.legal_actions if isinstance(action, RaiseBet) and action.raise_type == "all_in"]
         # All in if probability of winning is higher than 0.85
         if all_in_action and win_prob > 0.85:
             return all_in_action[0]
 
         # Randomly choose check, call or raise when available
-        check_action = [action for action in legal_actions if isinstance(action, Check)]
-        call_action = [action for action in legal_actions if isinstance(action, RaiseBet) and action.raise_type == "call"]
-        raise_action = [action for action in legal_actions if isinstance(action, RaiseBet) and action.raise_type == "raise"]
+        check_action = [action for action in self.legal_actions if isinstance(action, Check)]
+        call_action = [action for action in self.legal_actions if isinstance(action, RaiseBet) and action.raise_type == "call"]
+        raise_action = [action for action in self.legal_actions if isinstance(action, RaiseBet) and action.raise_type == "raise"]
         available_actions = [action for action in check_action + call_action + raise_action]
         return random.choice(available_actions)
 

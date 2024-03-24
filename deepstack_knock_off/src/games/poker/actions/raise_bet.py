@@ -1,5 +1,8 @@
+from typing import Dict
+
 from games.poker.actions.action import Action
 from games.poker.players.player import Player
+from games.poker.poker_game import PokerGame
 
 
 class RaiseBet(Action):
@@ -22,3 +25,17 @@ class RaiseBet(Action):
         else:
             raise ValueError(f"Received unexpected raise_type {raise_type}")
         super().__init__(name=name, player=player)
+
+    def apply(self, game: PokerGame) -> Dict:
+        self.player.chips -= self.chip_cost
+        game.current_bet += self.raise_amount
+        game.pot += self.chip_cost
+        self.player.player_bet = game.current_bet
+        if self.raise_type == "call":
+            self.player.call()
+        elif self.raise_type == "raise":
+            for player_temp in game.round_players:
+                player_temp.has_called = False
+                player_temp.last_raised = False
+            self.player.poker_raise()
+        return {"message": f"{self.player.name} raise bet"}

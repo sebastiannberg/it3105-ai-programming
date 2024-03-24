@@ -17,16 +17,13 @@ class PokerGameManager:
     def __init__(self, poker_config: Dict, poker_rules: Dict) -> None:
         self.poker_config: Dict = poker_config
         self.poker_rules: Dict = poker_rules
-        self.game: PokerGame = None
         self.state_manager: PokerStateManager = PokerStateManager(poker_rules)
         self.oracle: PokerOracle = PokerOracle()
-
-    def start_game(self) -> None:
+        # Generate players
         players = self.gen_poker_players(num_ai_players=self.poker_config["num_ai_players"], num_human_players=self.poker_config["num_human_players"])
         if len(players) > 2 and self.poker_config["enable_resolver"] == True:
             raise ValueError("Cannot use resolver when there are more than 2 players")
-
-        self.game = PokerGame(
+        self.game: PokerGame = PokerGame(
             game_players=players,
             round_players=players.copy(),
             small_blind_player=None,
@@ -40,93 +37,60 @@ class PokerGameManager:
             ai_strategy=None
         )
 
+    def start_game(self) -> None:
         self.assign_blind_roles()
         self.perform_blind_bets()
         self.deal_cards()
         self.assign_next_player()
 
-    def assign_legal_actions_to_player(self, player_name: str, poker_rules: Dict) -> None:
+    def assign_legal_actions_to_player(self, player_name: str) -> None:
         player = self.find_round_player_by_name(player_name)
-
         legal_actions: List[Action] = []
-
+        # Fold
         legal_actions.append(Fold(player))
-
-        check = self._can_check(player, poker_rules)
-        if check:
-            legal_actions.append(check)
-
-        call = self._can_call(player, poker_rules)
-        if call:
-            legal_actions.append(call)
-
-        poker_raise = self._can_raise(player, poker_rules)
-        if poker_raise:
-            legal_actions.append(poker_raise)
-
-        all_in = self.can_all_in(player, poker_rules)
-        if all_in:
-            legal_actions.append(all_in)
-
-        player.legal_actions = legal_actions
-
-    def _can_check(self, player: Player, poker_rules: Dict):
+        # Check
         if self.game.current_bet == player.player_bet:
-            return Check(player=player)
-        else:
-            return None
-
-    def _can_call(self, player: Player, poker_rules: Dict):
+            legal_actions.append(Check(player=player))
+        # Call
         if player.player_bet < self.game.current_bet and player.chips >= (self.game.current_bet - player.player_bet):
-            return RaiseBet(player, chip_cost=(self.game.current_bet - player.player_bet), raise_amount=0, raise_type="call")
-        else:
-            return None
-
-    def _can_raise(self, player: Player, poker_rules: Dict):
-        if player.chips >= poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet):
-            return RaiseBet(player, chip_cost=(self.game.current_bet -player.player_bet + poker_rules["fixed_raise"]), raise_amount=poker_rules["fixed_raise"], raise_type="raise")
-        else:
-            return None
-
-    def _all_in(self, player: Player, poker_rules: Dict):
-        if poker_rules["all_in_disabled"]:
-            return None
-        else:
+            legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet - player.player_bet), raise_amount=0, raise_type="call"))
+        # Raise
+        if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet):
+            legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet -player.player_bet + self.poker_rules["fixed_raise"]), raise_amount=self.poker_rules["fixed_raise"], raise_type="raise"))
+        # All In
+        if not self.poker_rules["all_in_disabled"]:
             if player.chips - self.game.current_bet < 0:
                 # All in without calling
                 raise NotImplementedError("Not implemented")
             else:
-                return RaiseBet(player, chip_cost=(player.chips), raise_amount=(player.chips - self.game.current_bet), raise_type="all_in")
+                legal_actions.append(RaiseBet(player, chip_cost=(player.chips), raise_amount=(player.chips - self.game.current_bet), raise_type="all_in"))
+
+        player.legal_actions = legal_actions
 
     def apply_action(self, player_name: str, action_name: str) -> Dict:
+        # Find the player by name
         player = self.find_round_player_by_name(player_name)
+        if not player:
+            return {"error": "Player not found"}
+
+        # Find action by player name and action name
         selected_action = None
         for legal_action in  player.legal_actions:
             if player_name == legal_action.player.name and action_name == legal_action.name:
                 selected_action = legal_action
                 break
 
-        if isinstance(selected_action, Fold):
-            self.game.round_players.remove(player)
-            player.fold()
+        action_result = selected_action.apply(self.game)
+        # Reset player's legal actions after applying
+        player.legal_actions = None
 
-        if isinstance(selected_action, Check):
-            player.check()
+        post_action_result = self.post_action()
+        if not post_action_result:
+            return action_result
 
-        if isinstance(selected_action, RaiseBet):
-            player.chips -= selected_action.chip_cost
-            self.game.current_bet += selected_action.raise_amount
-            self.game.pot += selected_action.chip_cost
-            player.player_bet = self.game.current_bet
-            if selected_action.raise_type == "call":
-                player.call()
-            elif selected_action.raise_type == "raise":
-                for player_temp in self.game.round_players:
-                    player_temp.has_called = False
-                    player_temp.last_raised = False
-                player.poker_raise()
+        return post_action_result
 
-
+    def post_action(self) -> Optional[Dict]:
         game_winner = self.check_for_game_winner()
         if game_winner:
             return {"game_winner": game_winner.name}
@@ -139,13 +103,13 @@ class PokerGameManager:
             game_winner = self.check_for_game_winner()
             if game_winner:
                 return {"game_winner": game_winner.name}
-            else:
-                return {"round_winners":[
-                    {
-                        "player": early_round_winner.name,
-                        "early_win": True
-                    }
-                ]}
+
+            return {"round_winners":[
+                {
+                    "player": early_round_winner.name,
+                    "early_win": True
+                }
+            ]}
 
         if self.check_for_proceed_stage():
             winners_details = self.proceed_stage()
@@ -156,25 +120,24 @@ class PokerGameManager:
                 game_winner = self.check_for_game_winner()
                 if game_winner:
                     return {"game_winner": game_winner.name}
+
                 return {"round_winners": winners_details}
         else:
             self.assign_next_player()
 
-        return {"message": "Action applied successfully"}
-
     def get_ai_decision(self) -> Dict:
-        if not isinstance(self.game.active_player, AIPlayer):
+        if not isinstance(self.game.current_player, AIPlayer):
             return None
 
-        legal_actions = self.assign_legal_actions_to_player(self.game.active_player, self.rules)
+        self.assign_legal_actions_to_player(self.game.current_player, self.poker_rules)
 
-        if self.rules["ai_strategy"] == "rollout":
-            selected_action = self.game.active_player.make_decision_rollouts(self.oracle, self.game.public_cards, len(self.game.round_players)-1, legal_actions)
-        elif self.game_manager.rules["ai_strategy"] == "resolve":
-            raise NotImplementedError()
+        if self.poker_config["enable_resolver"]:
+            prob_resolver = self.poker_config["prob_resolver"]
+            print(prob_resolver)
+        else:
+            selected_action = self.game.current_player.make_decision_rollouts(self.oracle, self.game.public_cards, len(self.game.round_players)-1)
+
         return selected_action.to_dict()
-
-
 
     def gen_poker_players(self, num_ai_players: int, num_human_players: int) -> List[Player]:
         if num_ai_players + num_human_players > 6:
@@ -223,19 +186,19 @@ class PokerGameManager:
         if not current_small_blind_player or not current_big_blind_player:
             raise ValueError("Either small blind or big blind is not assigned to a player")
         # Small blind action
-        raise_amount = (current_small_blind_player.player_bet + self.game.small_blind_amount) - self.game.current_bet
+        raise_amount = (current_small_blind_player.player_bet + self.poker_config["small_blind_amount"]) - self.game.current_bet
         small_blind_action = RaiseBet(player=current_small_blind_player,
-                                      chip_cost=self.game.small_blind_amount,
+                                      chip_cost=self.poker_config["small_blind_amount"],
                                       raise_amount=raise_amount,
                                       raise_type="small_blind")
-        PokerStateManager.apply_action(self.game, current_small_blind_player, small_blind_action)
+        small_blind_action.apply(self.game)
         # Big blind action
-        raise_amount = (current_big_blind_player.player_bet + self.game.big_blind_amount) - self.game.current_bet
+        raise_amount = (current_big_blind_player.player_bet + self.poker_config["big_blind_amount"]) - self.game.current_bet
         big_blind_action = RaiseBet(player=current_big_blind_player,
-                                    chip_cost=self.game.big_blind_amount,
+                                    chip_cost=self.poker_config["big_blind_amount"],
                                     raise_amount=raise_amount,
                                     raise_type="big_blind")
-        PokerStateManager.apply_action(self.game, current_big_blind_player, big_blind_action)
+        big_blind_action.apply(self.game)
 
     def deal_cards(self):
         if self.game.stage == "preflop":
@@ -397,7 +360,7 @@ class PokerGameManager:
         self.game.public_cards = []
         self.game.stage = "preflop"
         self.deck = self.oracle.gen_deck(num_cards=52, shuffled=True)
-        # Init a new round
+        # Start a new round
         self.assign_blind_roles()
         self.perform_blind_bets()
         self.deal_cards()
