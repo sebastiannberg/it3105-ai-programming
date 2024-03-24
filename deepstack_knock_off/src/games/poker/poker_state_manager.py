@@ -1,9 +1,9 @@
-from __future__ import annotations
 from typing import List, Dict
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from games.poker.poker_game_manager import PokerGameManager
+# from __future__ import annotations
+# from typing import TYPE_CHECKING
+# if TYPE_CHECKING:
+#     from games.poker.poker_game_manager import PokerGameManager
 
 from games.poker.players.player import Player
 from games.poker.poker_state import PokerState
@@ -14,6 +14,10 @@ from games.poker.actions.check import Check
 
 
 class PokerStateManager:
+
+    def __init__(self, poker_rules: Dict):
+        # State manager able to have it's own rules to simplify AI decision making
+        self.poker_rules = poker_rules
 
     @staticmethod
     def gen_init_state(players: List[Player], deck, small_blind_amount, big_blind_amount):

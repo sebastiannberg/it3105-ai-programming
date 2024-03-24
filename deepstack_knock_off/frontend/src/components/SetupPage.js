@@ -4,46 +4,58 @@ import axios from 'axios';
 
 const SetupPage = () => {
   const navigate = useNavigate();
-  const [rules, setRules] = useState("");
+  const [config, setConfig] = useState({});
+  const [rules, setRules] = useState({});
 
-  const fetchRules = async () => {
+  const fetchPlaceholders = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/rules");
-      setRules(JSON.stringify(response.data, null, 4));
+      const response = await axios.get("http://127.0.0.1:5000/placeholders");
+      setConfig(response.data.config);
+      setRules(response.data.rules);
     } catch (error) {
-      console.error('Failed to fetch rules:', error);
+      console.error('Failed to fetch placeholders:', error);
     }
   };
 
   useEffect(() => {
-    fetchRules();
+    fetchPlaceholders();
   }, []);
 
+  const handleConfigChange = (event) => {
+    setConfig(JSON.parse(event.target.value));
+  };
+
   const handleRulesChange = (event) => {
-    setRules(event.target.value);
+    setRules(JSON.parse(event.target.value));
   };
 
   const startGame = async () => {
     try {
-      const updatedRules = JSON.parse(rules);
-      await axios.post("http://127.0.0.1:5000/start-game", updatedRules);
+      await axios.post("http://127.0.0.1:5000/start-game", { config, rules });
       navigate("/board")
     } catch (error) {
-      console.error('Failed to start game or parse rules:', error);
+      console.error('Failed to start game or parse:', error);
     }
   };
 
   return (
     <div>
-      <h1 className='title'>Poker Rules</h1>
       <div className='setup-box'>
+        <h1 className='title'>Poker Config</h1>
         <textarea
-          value={rules}
+            value={JSON.stringify(config, null, 4)}
+            onChange={handleConfigChange}
+            rows={10}
+            cols={60}
+          />
+        <h1 className='title'>Poker Rules</h1>
+        <textarea
+          value={JSON.stringify(rules, null, 4)}
           onChange={handleRulesChange}
-          rows={25}
+          rows={10}
           cols={60}
         />
-        <button className='poker-button' onClick={startGame}>START GAME</button>
+      <button className='poker-button' onClick={startGame}>START GAME</button>
       </div>
     </div>
   );

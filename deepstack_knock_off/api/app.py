@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_caching import Cache
 
 import pickle
+import json
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
@@ -15,11 +16,16 @@ app = Flask(__name__)
 CORS(app)
 cache = Cache(app, config={"CACHE_TYPE": "simple"})
 
-@app.route("/rules", methods=["GET"])
+@app.route("/placeholders", methods=["GET"])
 def rules():
     try:
-        return send_from_directory(directory=os.path.join(app.root_path, "data"), path="rules.json", as_attachment=False)
-    except:
+        directory = os.path.join(app.root_path, "data")
+        with open(os.path.join(directory, "poker_rules.json"), 'r') as rules_file:
+            rules = json.load(rules_file)
+        with open(os.path.join(directory, "poker_config.json"), 'r') as config_file:
+            config = json.load(config_file)
+        return jsonify({"rules": rules, "config": config})
+    except FileNotFoundError:
         return jsonify({"error": "File not found."}), 404
 
 @app.route("/start-game", methods=["POST"])
