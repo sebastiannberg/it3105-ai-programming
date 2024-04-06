@@ -6,7 +6,7 @@ const Action = ({ action, onClick, isSelected }) => {
 
   return (
     <li className={className} onClick={onClick}>
-      <div>{action.name}</div>
+      <div>{action.action_name}</div>
     </li>
   );
 };

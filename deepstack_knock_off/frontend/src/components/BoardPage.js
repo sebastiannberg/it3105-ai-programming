@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import GameBoard from './GameBoard';
 import ActionPane from './ActionPane';
 import Player from './Player';
 
-
 const BoardPage = () => {
-  const [gameState, setGameState] = useState("");
+  const [gameState, setGameState] = useState(null);
   const [winner, setWinner] = useState(null);
   const [roundWinners, setRoundWinners] = useState([]);
   const [aiDecision, setAiDecision] = useState(null);
@@ -21,28 +20,34 @@ const BoardPage = () => {
   };
 
   useEffect(() => {
-    fetchGameState()
+    fetchGameState();
   }, []);
 
-  const playerEntries = gameState.game_players ? Object.entries(gameState.game_players) : [];
+  useEffect(() => {
+    if (gameState) {
+      console.log(gameState)
+    }
+  }, [gameState])
 
-  const renderPlayers = (playerArray) => playerArray.map(([playerName, playerDetails]) => (
-    <Player
-      key={playerName}
-      name={playerName}
-      chips={playerDetails.chips}
-      hand={playerDetails.hand}
-      bet={playerDetails.player_bet}
-    />
-  ));
+  const renderPlayers = (playersArray) => {
+    return playersArray.map((player, index) => (
+      <Player
+        key={index}
+        name={player.name}
+        chips={player.chips}
+        hand={player.hand}
+        bet={player.player_bet}
+      />
+    ));
+  };
 
   const handleNextRound = async () => {
     try {
       console.log('Proceeding to the next round...');
       axios.post("http://127.0.0.1:5000/next-round")
         .then(() => {
-          fetchGameState()
-        })
+          fetchGameState();
+        });
       setRoundWinners([]);
     } catch (error) {
       console.error('Failed to proceed to the next round:', error);
@@ -54,32 +59,28 @@ const BoardPage = () => {
       <div key={index}>
         {winner.hand_category ?
           `${winner.player} won the round with a ${winner.hand_category}` :
-          `${winner.player} won the round`
-        }
+          `${winner.player} won the round`}
       </div>
     ));
   };
 
-  return(
+  return (
     <div className='board-page'>
       <div className='player-section'>
         <h1>Players</h1>
-        {renderPlayers(playerEntries)}
+        {gameState ? renderPlayers(gameState.game_players) : <p>Loading players...</p>}
       </div>
       <div className='board-section'>
         <h1>
           {winner ? `${winner} is the winner!` :
           roundWinners.length > 0 ? renderRoundWinnersDetails() :
-          gameState.active_player ? `${Object.keys(gameState.active_player)[0]}'s turn` : "no current player"}
+          gameState?.current_player ? `${gameState.current_player.name}'s turn` : "No current player"}
         </h1>
         {
-          // Check if there's a winner or round winners first
           (winner || roundWinners.length > 0) ? <p>&nbsp;</p> :
-          // Then check if it's AI's turn
-          (gameState.active_player && Object.keys(gameState.active_player)[0]?.includes("AI")) ?
-            (aiDecision && aiDecision.name ? <p>AI choose to <strong>{aiDecision.name}</strong></p> : <p>AI calculating decision...</p>)
-            :
-            <p>&nbsp;</p>
+          (gameState?.current_player && gameState.current_player.name.includes("AI")) ?
+            (aiDecision && aiDecision.action_name ? <p>AI choose to <strong>{aiDecision.action_name}</strong></p> : <p>AI calculating decision...</p>)
+            : <p>&nbsp;</p>
         }
         <GameBoard gameState={gameState} />
         <button
@@ -95,7 +96,7 @@ const BoardPage = () => {
         <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinners={setRoundWinners} onAiDecision={setAiDecision} winner={winner} roundWinners={roundWinners} aiDecision={aiDecision} />
       </div>
     </div>
-  )
+  );
 };
 
 export default BoardPage;

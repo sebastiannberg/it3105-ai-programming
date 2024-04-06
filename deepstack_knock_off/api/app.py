@@ -10,7 +10,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from games.poker.poker_game_manager import PokerGameManager
-from games.poker.poker_oracle import PokerOracle
 
 app = Flask(__name__)
 CORS(app)
@@ -39,7 +38,7 @@ def rules():
 def start_game():
     data = request.json
     try:
-        game_manager = PokerGameManager(data["config"], data["rules"], PokerOracle())
+        game_manager = PokerGameManager(data["config"], data["rules"])
         game_manager.start_game()
 
         cache.set("game_manager", pickle.dumps(game_manager))
@@ -59,15 +58,17 @@ def game_state():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/legal-actions", methods=["GET"])
+@app.route("/legal-actions", methods=["POST"])
 def legal_actions():
+    data = request.json
     try:
         serialized_game_manager = cache.get("game_manager")
         game_manager = pickle.loads(serialized_game_manager)
 
-        legal_actions = game_manager.get_legal_actions()
+        game_manager.assign_legal_actions_to_player(data["name"])
 
-        return jsonify(legal_actions), 200
+        cache.set("game_manager", pickle.dumps(game_manager))
+        return jsonify({"message": "Legal actions assigned to player"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -108,7 +109,9 @@ def ai_decision():
         game_manager = pickle.loads(serialized_game_manager)
 
         ai_action = game_manager.get_ai_decision()
+        print(ai_action)
 
+        cache.set("game_manager", pickle.dumps(game_manager))
         if ai_action:
             return jsonify(ai_action), 200
         else:

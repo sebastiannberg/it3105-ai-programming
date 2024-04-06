@@ -129,14 +129,13 @@ class PokerGameManager:
         if not isinstance(self.game.current_player, AIPlayer):
             return None
 
-        self.assign_legal_actions_to_player(self.game.current_player, self.poker_rules)
+        self.assign_legal_actions_to_player(self.game.current_player.name)
 
         if self.poker_config["enable_resolver"]:
             prob_resolver = self.poker_config["prob_resolver"]
             print(prob_resolver)
         else:
             selected_action = self.game.current_player.make_decision_rollouts(self.oracle, self.game.public_cards, len(self.game.round_players)-1)
-
         return selected_action.to_dict()
 
     def gen_poker_players(self, num_ai_players: int, num_human_players: int) -> List[Player]:
@@ -213,38 +212,35 @@ class PokerGameManager:
             self.game.public_cards.extend(cards)
 
     def assign_next_player(self, stage_change=False):
-        if not self.game.active_player:
+        if not self.game.current_player:
             # Assign player after big blind
             current_big_blind_player = self.game.big_blind_player
             big_blind_index = self.game.round_players.index(current_big_blind_player)
             next_player_index = (big_blind_index + 1) % len(self.game.round_players)
-            self.game.active_player = self.game.round_players[next_player_index]
+            self.game.current_player = self.game.round_players[next_player_index]
         elif stage_change:
             # Assign first player after dealer
             if not self.game.small_blind_player.has_folded:
-                self.game.active_player = self.game.small_blind_player
+                self.game.current_player = self.game.small_blind_player
             else:
                 small_blind_index = self.game.game_players.index(self.game.small_blind_player)
                 next_player_index = (small_blind_index + 1) % len(self.game.game_players)
 
                 while self.game.game_players[next_player_index].has_folded:
                     next_player_index = (next_player_index + 1) % len(self.game.game_players)
-                    if next_player_index == current_active_player_index:
+                    if next_player_index == small_blind_index:
                         break
-
-                self.game.active_player = self.game.game_players[next_player_index]
+                self.game.current_player = self.game.game_players[next_player_index]
         else:
             # Assign player after current player
-            current_active_player = self.game.active_player
-            current_active_player_index = self.game.game_players.index(current_active_player)
-            next_player_index = (current_active_player_index + 1) % len(self.game.game_players)
-
+            current_player = self.game.current_player
+            current_player_index = self.game.game_players.index(current_player)
+            next_player_index = (current_player_index + 1) % len(self.game.game_players)
             while self.game.game_players[next_player_index].has_folded:
                 next_player_index = (next_player_index + 1) % len(self.game.game_players)
-                if next_player_index == current_active_player_index:
+                if next_player_index == current_player_index:
                     break
-
-            self.game.active_player = self.game.game_players[next_player_index]
+            self.game.current_player = self.game.game_players[next_player_index]
 
     def check_for_proceed_stage(self):
         if self.game.stage == "preflop":
@@ -381,67 +377,16 @@ class PokerGameManager:
         """
         Generates a dictionary containing information about the game
         """
-        # TODO update to contain all information needed
-        if self.game.game_players:
-            game_players_dict = {}
-            for player in self.game.game_players:
-                game_players_dict[player.name] = {
-                    "hand": [{"rank": card.rank, "suit": card.suit} for card in player.hand],
-                    "chips": player.chips,
-                    "player_bet": player.player_bet
-                }
-        else:
-            game_players_dict = None
-
-        if self.game.round_players:
-            round_players_dict = {}
-            for player in self.game.round_players:
-                round_players_dict[player.name] = {
-                    "hand": [{"rank": card.rank, "suit": card.suit} for card in player.hand],
-                    "chips": player.chips,
-                    "player_bet": player.player_bet
-                }
-        else:
-            round_players_dict = None
-
-        if self.game.deck:
-            deck_dict = {"cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.deck.cards]}
-        else:
-            deck_dict = None
-
-        if self.game.small_blind_player and self.game.big_blind_player:
-            small_blind_player_dict = {self.game.small_blind_player.name: {
-                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.small_blind_player.hand],
-                "chips": self.game.small_blind_player.chips,
-                "player_bet": self.game.small_blind_player.player_bet
-            }}
-            big_blind_player_dict = {self.game.big_blind_player.name: {
-                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.big_blind_player.hand],
-                "chips": self.game.big_blind_player.chips,
-                "player_bet": self.game.big_blind_player.player_bet
-            }}
-        else:
-            small_blind_player_dict = None
-            big_blind_player_dict = None
-
-        if self.game.current_player:
-            current_player_dict = {self.game.current_player.name: {
-                "hand": [{"rank": card.rank, "suit": card.suit} for card in self.game.current_player.hand],
-                "chips": self.game.current_player.chips,
-                "player_bet": self.game.current_player.player_bet
-            }}
-        else:
-            current_player_dict = None
-
         return {
-            "game_players": game_players_dict,
-            "round_players": round_players_dict,
-            "deck": deck_dict,
-            "stage": self.game.stage,
+            "game_players": [player.to_dict() for player in self.game.game_players],
+            "round_players": [player.to_dict() for player in self.game.round_players],
+            "small_blind_player": self.game.small_blind_player.to_dict() if self.game.small_blind_player else None,
+            "big_blind_player": self.game.big_blind_player.to_dict() if self.game.big_blind_player else None,
+            "current_player": self.game.current_player.to_dict() if self.game.current_player else None,
+            "deck": {"cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.deck.cards]},
             "public_cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.public_cards],
+            "stage": self.game.stage,
             "pot": self.game.pot,
             "current_bet": self.game.current_bet,
-            "small_blind_player": small_blind_player_dict,
-            "big_blind_player": big_blind_player_dict,
-            "current_player": current_player_dict
+            "ai_strategy": self.game.ai_strategy
         }

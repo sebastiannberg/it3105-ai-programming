@@ -1,10 +1,12 @@
+from __future__ import annotations
+from typing import List, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from games.poker.players.player import Player
+    from games.poker.utils.deck import Deck
+    from games.poker.utils.card import Card
+    from games.poker.players.player import Player
+
 from dataclasses import dataclass
-from typing import List, Optional
-
-from games.poker.players.player import Player
-from games.poker.utils.deck import Deck
-from games.poker.utils.card import Card
-
 
 @dataclass
 class PokerGame:
