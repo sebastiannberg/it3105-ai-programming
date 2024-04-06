@@ -1,140 +1,131 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import Action from "./Action";
+import { useState, useEffect } from "react";
 import axios from 'axios';
+import Action from "./Action";
 
-
-const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinners, onAiDecision, winner, roundWinners, aiDecision }) => {
+const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinners, onAiDecision, aiDecision }) => {
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
-  const count = useRef(0);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const fetchLegalActions = async () => {
+  // Determine the current player type
+  const currentPlayerIsAI = gameState?.current_player?.name?.includes("AI");
+  const currentPlayerIsHuman = gameState?.current_player?.name?.includes("Human");
+
+  // Handle fetching AI decision or assigning legal actions based on the player type
+  useEffect(() => {
+    const handleGameUpdate = async () => {
+      if (isProcessing) return;
+
+      setIsProcessing(true);
+
+      try {
+        if (currentPlayerIsAI) {
+          await fetchAIDecision();
+        } else if (currentPlayerIsHuman && gameState.current_player.legal_actions == null) {
+          await assignLegalActions();
+        }
+      } catch (error) {
+        console.error('Error processing game update:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    handleGameUpdate();
+  }, [gameState, currentPlayerIsAI, currentPlayerIsHuman]);
+
+  const fetchAIDecision = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/legal-actions");
-      setActions(response.data);
+      const response = await axios.get("http://127.0.0.1:5000/ai-decision");
+      onAiDecision(response.data);
     } catch (error) {
-      console.error('Failed to fetch legal actions:', error);
+      console.error("Failed to fetch AI decision:", error);
     }
   };
 
-  const fetchAIDecision = useCallback(async () => {
+  const assignLegalActions = async () => {
+    const playerName = gameState.current_player.name;
+    console.log("Requesting actions assigned to player: ", playerName);
+    const payload = { name: playerName };
+
     try {
-      if (count.current !== 0) {
-        const response = await axios.get("http://127.0.0.1:5000/ai-decision")
-        onAiDecision(response.data)
+      const response = await axios.post("http://127.0.0.1:5000/legal-actions", payload);
+      if (response.status === 200) {
+        console.log(response.data.message);
+        fetchGameState();
+      } else {
+        console.error('Error assigning legal actions:', response.data.error);
       }
-      count.current++;
     } catch (error) {
-      console.error("Failed to fetch AI decision:", error)
+      console.error('Failed to assign legal actions:', error);
     }
-  }, [onAiDecision])
+  };
 
   useEffect(() => {
-    fetchLegalActions();
-    const activePlayerName = Object.keys(gameState.active_player || {})[0];
-    if (activePlayerName && activePlayerName.includes("AI")) {
-      fetchAIDecision();
+    if (gameState?.current_player?.legal_actions) {
+      setActions(gameState.current_player.legal_actions);
     }
-  }, [gameState, fetchAIDecision]);
+  }, [gameState]);
 
-  const applyAIAction = useCallback((action) => {
-    console.log("Applying AI action:", action);
+  useEffect(() => {
+    if (!aiDecision) return;
+
+    const timer = setTimeout(() => {
+      applyAction(aiDecision);
+      onAiDecision(null);
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [aiDecision, onAiDecision]);
+
+  const applyAction = async (action) => {
+    console.log("Applying action:", action);
+
     const payload = {
-      name: action.name,
-      player: action.player
+      name: action.action_name,
+      player: action.player_name,
     };
 
-    axios.post("http://127.0.0.1:5000/apply-action", payload)
-      .then(response => {
-        console.log("AI action applied successfully:", response.data);
-        if (response.data.winner) {
-          // A game winner has been determined
-          onWinnerDetermined(response.data.winner)
-          setActions([])
-          setSelectedAction(null)
-        } else if (response.data.round_winners) {
-          onRoundWinners(response.data.round_winners)
-          setActions([]);
-          setSelectedAction(null)
-        } else {
-          fetchGameState();
-        }
-        onAiDecision(null); // Properly reset aiDecision here if not done elsewhere
-      })
-      .catch(error => {
-        console.error("Failed to apply AI action:", error);
-      });
-      // Reset selection after applying
-      setSelectedAction(null);
-    }, [fetchGameState, onAiDecision, onWinnerDetermined, onRoundWinners]);
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/apply-action", payload);
+      console.log("Action applied successfully:", response.data);
 
-  // Adjust the useEffect hook for applying AI decisions
-  useEffect(() => {
-    // Check if aiDecision is not null and has the necessary properties
-    if (aiDecision && aiDecision.name) {
-      const timer = setTimeout(() => {
-        applyAIAction(aiDecision);
-        onAiDecision(null); // Reset aiDecision to null after applying
-      }, 4000); // Wait 4 seconds
-
-      return () => clearTimeout(timer); // Clean up the timeout if the component unmounts
+      if (response.data.winner) {
+        onWinnerDetermined(response.data.winner);
+        setActions([]);
+      } else if (response.data.round_winners) {
+        onRoundWinners(response.data.round_winners);
+        setActions([]);
+      } else {
+        fetchGameState();
+      }
+    } catch (error) {
+      console.error("Failed to apply action:", error);
     }
-  }, [aiDecision, onAiDecision, applyAIAction]); // Depend on aiDecision
-
+    setSelectedAction(null); // Reset selection after applying
+  };
 
   const handleActionClick = (action) => {
     setSelectedAction(action);
   };
 
-  const applySelectedAction = () => {
-    console.log("Applying action:", selectedAction);
-
-    const payload = {
-      name: selectedAction.name,
-      player: selectedAction.player
-    };
-
-    axios.post("http://127.0.0.1:5000/apply-action", payload)
-      .then(response => {
-        console.log("Action applied successfully:", response.data);
-        if (response.data.winner) {
-          // A game winner has been determined
-          onWinnerDetermined(response.data.winner)
-          setActions([]);
-          setSelectedAction(null);
-        } else if (response.data.round_winners) {
-          onRoundWinners(response.data.round_winners)
-          setActions([]);
-          setSelectedAction(null);
-        } else {
-          fetchGameState()
-        }
-      })
-      .catch(error => {
-        console.error("Failed to apply action:", error);
-      });
-    // Reset selection after applying
-    setSelectedAction(null);
-  };
-
-  const isAITurn = gameState.active_player && Object.keys(gameState.active_player)[0].includes("AI");
   const buttonClass = selectedAction ? "poker-button" : "poker-button disabled";
 
   return (
     <div className="action-pane">
       <div className="scroll-box">
         <ul>
-          {(!isAITurn && actions.length > 0) ? actions.map((action, index) => (
+          {!currentPlayerIsAI && actions.map((action, index) => (
             <Action
               key={index}
               action={action}
               onClick={() => handleActionClick(action)}
               isSelected={selectedAction === action}
             />
-          )) : null}
+          ))}
         </ul>
       </div>
-      <button className={buttonClass} onClick={applySelectedAction} disabled={!selectedAction || actions.length === 0}>Apply</button>
+      <button className={buttonClass} onClick={() => applyAction(selectedAction)} disabled={!selectedAction || actions.length === 0}>Apply</button>
     </div>
   );
 };

@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Dict, Optional
 
 from games.poker.utils.card import Card
+from games.poker.actions.action import Action
 
 
 class Player:
 
-    def __init__(self, name, initial_chips):
+    def __init__(self, name: str, initial_chips: int):
         self.name: str = name
         self.hand: List[Card] = []
         self.chips: int = initial_chips
@@ -14,6 +15,7 @@ class Player:
         self.has_checked = False
         self.has_called = False
         self.last_raised = False
+        self.legal_actions: Optional[List[Action]] = None
 
     def receive_cards(self, *cards: Card):
         self.hand.extend(cards)
@@ -37,3 +39,16 @@ class Player:
         self.has_checked = False
         self.has_called = False
         self.last_raised = False
+
+    def to_dict(self) -> Dict:
+        return {
+            "name": self.name,
+            "hand": [{"rank": card.rank, "suit": card.suit} for card in self.hand],
+            "chips": self.chips,
+            "player_bet": self.player_bet,
+            "has_folded": self.has_folded,
+            "has_checked": self.has_checked,
+            "has_called": self.has_called,
+            "last_raised": self.last_raised,
+            "legal_actions": [action.to_dict() for action in self.legal_actions] if self.legal_actions else None,
+        }
