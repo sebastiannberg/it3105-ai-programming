@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 from dataclasses import dataclass
 
+
 @dataclass
 class PokerGame:
     game_players: List[Player]

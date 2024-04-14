@@ -4,6 +4,6 @@
     "prob_resolver": 0.5,
     "num_human_players": 1,
     "initial_chips": 100,
-    "small_blind_amount": 5,
-    "big_blind_amount": 10
+    "small_blind_amount": 2,
+    "big_blind_amount": 4
 }

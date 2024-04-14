@@ -91,6 +91,7 @@ class PokerGameManager:
         return post_action_result
 
     def post_action(self) -> Optional[Dict]:
+        self.remove_busted_players()
         game_winner = self.check_for_game_winner()
         if game_winner:
             return {"game_winner": game_winner.name}

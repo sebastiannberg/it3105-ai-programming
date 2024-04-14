@@ -9,6 +9,7 @@ from random import sample
 from games.poker.utils.deck import Deck
 from games.poker.utils.card import Card
 from games.poker.utils.hand_type import HandType
+from games.poker.utils.hand_label_generator import HandLabelGenerator
 from games.poker.players.player import Player
 
 class PokerOracle:
@@ -69,48 +70,45 @@ class PokerOracle:
         public_cards_set = set((card.rank, card.suit) for card in public_cards)
 
         deck = self.gen_deck(num_cards=52, shuffled=False)
-        # Possible combination of 2 cards in a deck
         possible_hands = list(itertools.combinations(deck.cards, 2))
-        hand_labels = ["".join([f"{card.rank}{card.suit}" for card in hand]) for hand in possible_hands]
+        hand_labels = [HandLabelGenerator.get_hand_label(hand) for hand in possible_hands]
 
         # Initialize utility matrix with zeros
-        utility_matrix = pd.DataFrame(0, index=hand_labels, columns=hand_labels, dtype=np.int8)
+        utility_matrix = np.zeros((len(possible_hands), len(possible_hands)), dtype=np.int8)
+        # Creating a dictionary to map hand labels to their indices
+        hand_label_to_index = {label: idx for idx, label in enumerate(hand_labels)}
 
         for player_hand_index, player_hand in enumerate(possible_hands):
-            print(f"\rPlayer hand {player_hand_index}", end="")
+            print(f"\rPlayer hand {player_hand_index+1}", end="")
             # If a card in the player's hand is also in the set of public cards, go to the next player hand
             if any((player_card.rank, player_card.suit) in public_cards_set for player_card in player_hand):
                 continue
             player_hand_type = self.classify_poker_hand(list(player_hand), public_cards)
-            player_hand_label = hand_labels[player_hand_index]
-
 
             for opponent_hand_index, opponent_hand in enumerate(possible_hands):
                 # If a card in the opponent's hand is also in the set of public cards, go to next opponent hand
                 if any((opponent_card.rank, opponent_card.suit) in public_cards_set for opponent_card in opponent_hand):
                     continue
-                # If a card in the player's hand is alsi in the opponent's hand, go to the next opponent hand
+                # If a card in the player's hand is also in the opponent's hand, go to the next opponent hand
                 if any(card in opponent_hand for card in player_hand):
                     continue
-
                 opponent_hand_type = self.classify_poker_hand(list(opponent_hand), public_cards)
-                opponent_hand_label = hand_labels[opponent_hand_index]
 
                 result = self.compare_poker_hands(player_hand_type, opponent_hand_type)
                 if result == "player":
                     # If player wins, mark the corresponding cell with 1
-                    utility_matrix.loc[player_hand_label, opponent_hand_label] = 1
+                    utility_matrix[player_hand_index, opponent_hand_index] = 1
                 elif result == "opponent":
                     # If opponent wins, mark the corresponding cell with -1
-                    utility_matrix.loc[player_hand_label, opponent_hand_label] = -1
-                # If tie just let it be 0
+                    utility_matrix[player_hand_index, opponent_hand_index] = -1
+
         print()
         end_time = time.time()
         duration = end_time - start_time
         duration_minutes = duration / 60
         print(f"gen_utility_matrix took {duration_minutes:.2f} minutes to run")
 
-        return utility_matrix
+        return utility_matrix, hand_label_to_index
 
     def classify_poker_hand(self, hand: List[Card], public_cards: List[Card], player: Optional[Player] = None) -> HandType:
         # All cards length is 5, 6 or 7
@@ -347,7 +345,7 @@ class PokerOracle:
                 # If all primary values and kickers are equal, it's a tie
                 return "tie"
 
-    def perform_rollouts(self, player_hand: List[Card], public_cards: List[Card], num_opponent_players: int = 1, num_rollouts: int = 5000) -> float:
+    def perform_rollouts(self, player_hand: List[Card], public_cards: List[Card], num_opponent_players: int = 1, num_rollouts: int = 5000):
         if len(public_cards) not in (0, 3, 4, 5):
             raise ValueError("Length of public cards must be 0, 3, 4 or 5 when performing rollouts")
         if len(player_hand) != 2:

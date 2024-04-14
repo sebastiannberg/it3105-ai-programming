@@ -7,6 +7,7 @@ import numpy as np
 from games.poker.poker_oracle import PokerOracle
 from games.poker.utils.card import Card
 from games.poker.utils.hand_type import HandType
+from games.poker.utils.hand_label_generator import HandLabelGenerator
 
 
 oracle = PokerOracle()
@@ -256,8 +257,26 @@ for player_hand, opponent_hand in tie_tests:
     assert result == "tie", f"Expected 'tie' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"
 
 # Test Utility Matrix
-# public_cards = [Card("J", "hearts"), Card("J", "spades"), Card("A", "clubs")]
-# utility_matrix = oracle.gen_utility_matrix(public_cards)
+public_cards = [Card("J", "hearts"), Card("J", "spades"), Card("A", "clubs")]
+utility_matrix, hand_label_to_index = oracle.gen_utility_matrix(public_cards)
+
+player_hand = [Card("J", "diamonds"), Card("3", "spades")]
+player_hand_label = HandLabelGenerator.get_hand_label(player_hand)
+opponent_hand = [Card("2", "hearts"), Card("3", "spades")]
+opponent_hand_label = HandLabelGenerator.get_hand_label(opponent_hand)
+assert utility_matrix[hand_label_to_index[player_hand_label], hand_label_to_index[opponent_hand_label]] == 0
+
+player_hand = [Card("J", "diamonds"), Card("3", "spades")]
+player_hand_label = HandLabelGenerator.get_hand_label(player_hand)
+opponent_hand = [Card("2", "hearts"), Card("8", "diamonds")]
+opponent_hand_label = HandLabelGenerator.get_hand_label(opponent_hand)
+assert utility_matrix[hand_label_to_index[player_hand_label], hand_label_to_index[opponent_hand_label]] == 1
+
+player_hand = [Card("A", "diamonds"), Card("7", "hearts")]
+player_hand_label = HandLabelGenerator.get_hand_label(player_hand)
+opponent_hand = [Card("J", "clubs"), Card("8", "diamonds")]
+opponent_hand_label = HandLabelGenerator.get_hand_label(opponent_hand)
+assert utility_matrix[hand_label_to_index[player_hand_label], hand_label_to_index[opponent_hand_label]] == -1
 
 # Test Rollouts
 player_hand = [Card("2", "hearts"), Card("3", "spades")]
