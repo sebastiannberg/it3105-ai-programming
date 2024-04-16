@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 from games.poker.utils.card import Card
 
@@ -7,9 +7,10 @@ from games.poker.utils.card import Card
 @dataclass
 class PokerState:
     public_cards: List[Card]
-    chips_player_one: int
-    chips_player_two: int
+    player_one_chips: int
+    player_one_bet: int
+    player_two_chips: int
+    player_two_bet: int
     pot: int
-    current_bet: int
     stage: str
-    # history: List[Action] # TODO keep this?
+    stage_history: List[Tuple[str, str]] # (player, action)

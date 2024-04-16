@@ -12,6 +12,7 @@ from games.poker.utils.hand_type import HandType
 from games.poker.utils.hand_label_generator import HandLabelGenerator
 from games.poker.players.player import Player
 
+# TODO static?
 class PokerOracle:
 
     def __init__(self):

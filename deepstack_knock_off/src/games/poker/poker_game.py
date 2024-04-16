@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from games.poker.utils.deck import Deck
     from games.poker.utils.card import Card
     from games.poker.players.player import Player
+    from games.poker.actions.action import Action
 
 from dataclasses import dataclass
 
@@ -19,6 +20,7 @@ class PokerGame:
     deck: Deck
     public_cards: List[Card]
     stage: str
+    stage_history: List[Action]
     pot: int
     current_bet: int
     ai_strategy: Optional[str]

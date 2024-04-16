@@ -20,13 +20,12 @@ class RaiseBet(Action):
             name = f"Call ({chip_cost})"
         elif raise_type == "raise":
             name = f"Raise {raise_amount} ({chip_cost})"
-        elif raise_type == "all_in":
-            raise NotImplementedError("All in action not implemented yet")
         else:
             raise ValueError(f"Received unexpected raise_type {raise_type}")
         super().__init__(name=name, player=player)
 
     def apply(self, game: PokerGame) -> Dict:
+        game.stage_history.append(self)
         self.player.chips -= self.chip_cost
         game.current_bet += self.raise_amount
         game.pot += self.chip_cost

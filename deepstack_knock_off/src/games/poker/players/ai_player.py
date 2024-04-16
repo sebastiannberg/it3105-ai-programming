@@ -42,8 +42,6 @@ class AIPlayer(Player):
                     action_scores[action] = win_prob + (tie_prob * 0.75)
                 elif action.raise_type == "raise":
                     action_scores[action] = win_prob * 0.85 + (tie_prob * 0.5)
-                elif action.raise_type == "all_in":
-                    action_scores[action] = win_prob * 0.95 + (tie_prob * 0.05)
 
         actions, scores = zip(*action_scores.items())
         total_score = sum(scores)

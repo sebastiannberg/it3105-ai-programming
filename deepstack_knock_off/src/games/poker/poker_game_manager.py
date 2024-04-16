@@ -32,6 +32,7 @@ class PokerGameManager:
             deck=self.oracle.gen_deck(self.poker_rules["deck_size"], shuffled=True),
             public_cards=[],
             stage="preflop",
+            stage_history=[],
             pot=0,
             current_bet=0,
             ai_strategy=None
@@ -57,13 +58,6 @@ class PokerGameManager:
         # Raise
         if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet):
             legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet -player.player_bet + self.poker_rules["fixed_raise"]), raise_amount=self.poker_rules["fixed_raise"], raise_type="raise"))
-        # All In
-        if not self.poker_rules["all_in_disabled"]:
-            if player.chips - self.game.current_bet < 0:
-                # All in without calling
-                raise NotImplementedError("Not implemented")
-            else:
-                legal_actions.append(RaiseBet(player, chip_cost=(player.chips), raise_amount=(player.chips - self.game.current_bet), raise_type="all_in"))
 
         player.legal_actions = legal_actions
 
@@ -158,7 +152,7 @@ class PokerGameManager:
         for player in self.game.round_players:
             if player.name == player_name:
                 return player
-        return None
+        raise ValueError(f"{player_name} not found in game round")
 
     def assign_blind_roles(self):
         current_small_blind_player = self.game.small_blind_player
@@ -274,7 +268,6 @@ class PokerGameManager:
                 return True
 
     def proceed_stage(self) -> Optional[List[Dict]]:
-        self.game.current_bet = 0
         for player in self.game.round_players:
             player.player_bet = 0
             player.has_checked = False
@@ -286,6 +279,9 @@ class PokerGameManager:
             # Advance the game stage
             stage_transitions = {"preflop": "flop", "flop": "turn", "turn": "river"}
             self.game.stage = stage_transitions.get(self.game.stage, self.game.stage)
+            # Reset stage variables
+            self.game.current_bet = 0
+            self.game.stage_history = []
             # Deal cards and assign the active player for the new stage
             self.deal_cards()
             self.assign_next_player(stage_change=True)
@@ -351,8 +347,8 @@ class PokerGameManager:
         for player in self.game.game_players:
             player.ready_for_new_round()
         self.game.round_players = self.game.game_players.copy()
-        # Reset state variables
-        self.game.active_player = None
+        # Reset round variables
+        self.game.current_player = None
         self.game.current_bet = 0
         self.game.public_cards = []
         self.game.stage = "preflop"

@@ -2,8 +2,6 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-import numpy as np
-
 from games.poker.poker_oracle import PokerOracle
 from games.poker.utils.card import Card
 from games.poker.utils.hand_type import HandType
