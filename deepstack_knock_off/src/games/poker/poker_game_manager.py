@@ -19,7 +19,6 @@ class PokerGameManager:
         self.poker_rules: Dict = poker_rules
         self.state_manager: PokerStateManager = PokerStateManager(poker_rules)
         self.oracle: PokerOracle = PokerOracle()
-        # Generate players
         players = self.gen_poker_players(num_ai_players=self.poker_config["num_ai_players"], num_human_players=self.poker_config["num_human_players"])
         if len(players) > 2 and self.poker_config["enable_resolver"] == True:
             raise ValueError("Cannot use resolver when there are more than 2 players")
@@ -56,10 +55,11 @@ class PokerGameManager:
         if player.player_bet < self.game.current_bet and player.chips >= (self.game.current_bet - player.player_bet):
             legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet - player.player_bet), raise_amount=0, raise_type="call"))
         # Raise
-        if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet) and not any(player.chips == 0 for player in self.game.round_players):
-            legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet -player.player_bet + self.poker_rules["fixed_raise"]), raise_amount=self.poker_rules["fixed_raise"], raise_type="raise"))
-        # All In
-        if  player.player_bet < self.game.current_bet and player.chips <= (self.game.current_bet - player.player_bet):
+        if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet) and not any(player.has_all_in or player.chips == 0 for player in self.game.round_players):
+            if len([action for action in self.game.stage_history if isinstance(action, RaiseBet) and action.raise_type=="raise"]) < self.poker_rules["max_num_raises_per_stage"]:
+                legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet -player.player_bet + self.poker_rules["fixed_raise"]), raise_amount=self.poker_rules["fixed_raise"], raise_type="raise"))
+        # All In (if player has chips but cannot call)
+        if  player.player_bet < self.game.current_bet and player.chips < (self.game.current_bet - player.player_bet):
             legal_actions.append(RaiseBet(player, chip_cost=player.chips, raise_amount=0, raise_type="all_in"))
         player.legal_actions = legal_actions
 
@@ -87,21 +87,6 @@ class PokerGameManager:
         return post_action_result
 
     def post_action(self) -> Optional[Dict]:
-        # Edge case for all in
-        if any(player.has_all_in for player in self.game.round_players):
-            # Deal out remainder of cards
-            if len(self.game.public_cards) < 5:
-                cards = self.game.deck.deal_cards(5-len(self.game.public_cards))
-                self.game.public_cards.extend(cards)
-            # Showdown
-            winners_details = self.showdown()
-            return {"round_winners": winners_details}
-
-        self.remove_busted_players()
-        game_winner = self.check_for_game_winner()
-        if game_winner:
-            return {"game_winner": game_winner.name}
-
         early_round_winner = self.check_for_early_round_winner()
         if early_round_winner:
             self.process_winnings()
@@ -119,16 +104,31 @@ class PokerGameManager:
             ]}
 
         if self.check_for_proceed_stage():
-            winners_details = self.proceed_stage()
-            if winners_details:
+            # Edge case for all in
+            if any(player.has_all_in for player in self.game.round_players):
+                print("Inside all in edge case post action")
+                # Deal out remainder of cards
+                if len(self.game.public_cards) < 5:
+                    cards = self.game.deck.deal_cards(5-len(self.game.public_cards))
+                    self.game.public_cards.extend(cards)
+                print(f"Public cards: {len(self.game.public_cards)}")
+                # Showdown
+                winners_details = self.showdown()
                 self.process_winnings()
                 self.remove_busted_players()
-
                 game_winner = self.check_for_game_winner()
                 if game_winner:
                     return {"game_winner": game_winner.name}
-
                 return {"round_winners": winners_details}
+            else:
+                winners_details = self.proceed_stage()
+                if winners_details:
+                    self.process_winnings()
+                    self.remove_busted_players()
+                    game_winner = self.check_for_game_winner()
+                    if game_winner:
+                        return {"game_winner": game_winner.name}
+                    return {"round_winners": winners_details}
         else:
             self.assign_next_player()
 
@@ -167,21 +167,36 @@ class PokerGameManager:
         raise ValueError(f"{player_name} not found in game round")
 
     def assign_blind_roles(self):
-        current_small_blind_player = self.game.small_blind_player
-        current_big_blind_player = self.game.big_blind_player
-        players = self.game.round_players
+        # Get the current players in the round and the game
+        round_players = self.game.round_players
+        game_players = set(self.game.game_players)  # Convert to set for faster lookup
 
-        if current_small_blind_player and current_big_blind_player:
-            small_blind_index = players.index(current_small_blind_player)
+        # Check if there are current blind players set
+        if self.game.small_blind_player and self.game.big_blind_player:
+            # Find the current small blind player in the round
+            current_small_blind_index = round_players.index(self.game.small_blind_player)
 
-            next_small_blind_index = (small_blind_index + 1) % len(players)
-            next_small_blind_player = players[next_small_blind_index]
+            # Initialize indices for searching next blinds
+            next_small_blind_index = (current_small_blind_index + 1) % len(round_players)
+            next_big_blind_index = (next_small_blind_index + 1) % len(round_players)
 
-            next_big_blind_index = (next_small_blind_index + 1) % len(players)
-            next_big_blind_player = players[next_big_blind_index]
+            # Find the next small blind player who is still in the game
+            while round_players[next_small_blind_index] not in game_players:
+                next_small_blind_index = (next_small_blind_index + 1) % len(round_players)
+            next_small_blind_player = round_players[next_small_blind_index]
+
+            # Find the next big blind player who is still in the game
+            next_big_blind_index = (next_small_blind_index + 1) % len(round_players)
+            while round_players[next_big_blind_index] not in game_players:
+                next_big_blind_index = (next_big_blind_index + 1) % len(round_players)
+            next_big_blind_player = round_players[next_big_blind_index]
+
+            # Set the new blind players in the game
+            self.game.small_blind_player = next_small_blind_player
+            self.game.big_blind_player = next_big_blind_player
         else:
-            next_small_blind_player = players[0]
-            next_big_blind_player = players[1]
+            next_small_blind_player = round_players[0]
+            next_big_blind_player = round_players[1]
 
         self.game.small_blind_player = next_small_blind_player
         self.game.big_blind_player = next_big_blind_player
@@ -357,6 +372,7 @@ class PokerGameManager:
     def end_round_next_round(self):
         # Reset every player still in the game
         for player in self.game.game_players:
+            print(player.name)
             player.ready_for_new_round()
         self.game.round_players = self.game.game_players.copy()
         # Reset round variables
@@ -368,8 +384,11 @@ class PokerGameManager:
         # Start a new round
         self.assign_blind_roles()
         self.perform_blind_bets()
+        print("hello")
         self.deal_cards()
+        print("hallaa")
         self.assign_next_player()
+        print("jajjaj")
 
     def remove_busted_players(self):
         for player in self.game.game_players:

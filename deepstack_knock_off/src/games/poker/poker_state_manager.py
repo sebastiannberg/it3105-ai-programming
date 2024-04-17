@@ -68,7 +68,8 @@ class PokerStateManager:
             legal_actions.append("call")
         # Raise
         if player == "player_one" and parent_state.player_one_chips >= self.poker_rules["fixed_raise"] + (parent_state.player_two_bet - parent_state.player_one_bet):
-            legal_actions.append(f"raise {self.poker_rules['fixed_raise']}")
+            if len([action for action in parent_state.stage_history if "raise" in action]) < self.poker_rules["max_num_raises_per_stage"]:
+                legal_actions.append(f"raise {self.poker_rules['fixed_raise']}")
         if player == "player_two" and parent_state.player_two_chips >= self.poker_rules["fixed_raise"] + (parent_state.player_one_bet - parent_state.player_two_bet):
             legal_actions.append(f"raise {self.poker_rules['fixed_raise']}")
         return legal_actions

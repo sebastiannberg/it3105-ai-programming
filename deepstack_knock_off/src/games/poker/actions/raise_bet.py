@@ -41,4 +41,8 @@ class RaiseBet(Action):
             self.player.poker_raise()
         elif self.raise_type == "all_in":
             self.player.all_in()
+            self.player.call()
+
+        if self.player.chips < 0:
+            raise ValueError("Player's chips ended up less than 0 after applying action")
         return {"message": f"{self.player.name} raise bet"}
