@@ -56,9 +56,11 @@ class PokerGameManager:
         if player.player_bet < self.game.current_bet and player.chips >= (self.game.current_bet - player.player_bet):
             legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet - player.player_bet), raise_amount=0, raise_type="call"))
         # Raise
-        if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet):
+        if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet) and not any(player.chips == 0 for player in self.game.round_players):
             legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet -player.player_bet + self.poker_rules["fixed_raise"]), raise_amount=self.poker_rules["fixed_raise"], raise_type="raise"))
-
+        # All In
+        if  player.player_bet < self.game.current_bet and player.chips <= (self.game.current_bet - player.player_bet):
+            legal_actions.append(RaiseBet(player, chip_cost=player.chips, raise_amount=0, raise_type="all_in"))
         player.legal_actions = legal_actions
 
     def apply_action(self, player_name: str, action_name: str) -> Dict:
@@ -85,6 +87,16 @@ class PokerGameManager:
         return post_action_result
 
     def post_action(self) -> Optional[Dict]:
+        # Edge case for all in
+        if any(player.has_all_in for player in self.game.round_players):
+            # Deal out remainder of cards
+            if len(self.game.public_cards) < 5:
+                cards = self.game.deck.deal_cards(5-len(self.game.public_cards))
+                self.game.public_cards.extend(cards)
+            # Showdown
+            winners_details = self.showdown()
+            return {"round_winners": winners_details}
+
         self.remove_busted_players()
         game_winner = self.check_for_game_winner()
         if game_winner:

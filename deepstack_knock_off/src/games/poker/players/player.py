@@ -15,6 +15,7 @@ class Player:
         self.has_checked = False
         self.has_called = False
         self.last_raised = False
+        self.has_all_in = False
         self.legal_actions: Optional[List[Action]] = None
 
     def receive_cards(self, *cards: Card):
@@ -32,6 +33,9 @@ class Player:
     def poker_raise(self):
         self.last_raised = True
 
+    def all_in(self):
+        self.has_all_in = True
+
     def ready_for_new_round(self):
         self.hand = []
         self.player_bet = 0
@@ -39,6 +43,7 @@ class Player:
         self.has_checked = False
         self.has_called = False
         self.last_raised = False
+        self.has_all_in = False
 
     def to_dict(self) -> Dict:
         return {

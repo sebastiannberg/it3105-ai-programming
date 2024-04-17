@@ -20,6 +20,8 @@ class RaiseBet(Action):
             name = f"Call ({chip_cost})"
         elif raise_type == "raise":
             name = f"Raise {raise_amount} ({chip_cost})"
+        elif raise_type == "all_in":
+            name = "All In"
         else:
             raise ValueError(f"Received unexpected raise_type {raise_type}")
         super().__init__(name=name, player=player)
@@ -29,7 +31,7 @@ class RaiseBet(Action):
         self.player.chips -= self.chip_cost
         game.current_bet += self.raise_amount
         game.pot += self.chip_cost
-        self.player.player_bet = game.current_bet
+        self.player.player_bet += self.chip_cost
         if self.raise_type == "call":
             self.player.call()
         elif self.raise_type == "raise":
@@ -37,4 +39,6 @@ class RaiseBet(Action):
                 player_temp.has_called = False
                 player_temp.last_raised = False
             self.player.poker_raise()
+        elif self.raise_type == "all_in":
+            self.player.all_in()
         return {"message": f"{self.player.name} raise bet"}
