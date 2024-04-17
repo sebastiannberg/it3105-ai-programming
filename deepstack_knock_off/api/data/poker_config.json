@@ -1,9 +1,9 @@
 {
-    "num_ai_players": 1,
+    "num_ai_players": 0,
     "enable_resolver": false,
     "prob_resolver": 0.5,
-    "num_human_players": 1,
-    "initial_chips": 50,
-    "small_blind_amount": 2,
-    "big_blind_amount": 4
+    "num_human_players": 3,
+    "initial_chips": 20,
+    "small_blind_amount": 3,
+    "big_blind_amount": 7
 }
