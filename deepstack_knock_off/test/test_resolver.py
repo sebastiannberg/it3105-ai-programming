@@ -3,20 +3,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from games.poker.poker_state_manager import PokerStateManager
-from games.poker.poker_game_manager import PokerGameManager
+from games.poker.utils.card import Card
 from games.poker.poker_state import PokerState
 from resolver.resolver import Resolver
 
 
-poker_config = {
-    "num_ai_players": 1,
-    "enable_resolver": False,
-    "prob_resolver": 0.5,
-    "num_human_players": 1,
-    "initial_chips": 100,
-    "small_blind_amount": 2,
-    "big_blind_amount": 4
-}
 poker_rules = {
     "deck_size": 52,
     "fixed_raise": 4,
@@ -36,4 +27,16 @@ poker_state = PokerState(
 )
 resolver = Resolver(PokerStateManager(poker_rules))
 root = resolver.build_initial_subtree(poker_state, end_stage="flop", end_depth=1)
+print(resolver.count_nodes(root))
+
+state = PokerState(public_cards=[Card('7', 'diamonds'), Card('3', 'hearts'), Card('A', 'clubs')],
+                   player_one_chips=0,
+                   player_one_bet=0,
+                   player_two_chips=0,
+                   player_two_bet=0,
+                   pot=28,
+                   stage='flop',
+                   history=[('preflop', 'player_one', 'small blind'), ('preflop', 'player_two', 'big blind'), ('preflop', 'player_one', 'raise 4'), ('preflop', 'player_two', 'raise 4'), ('preflop', 'player_one', 'call')])
+root = resolver.build_initial_subtree(state, end_stage="showdown", end_depth=0)
+print(root.children)
 print(resolver.count_nodes(root))

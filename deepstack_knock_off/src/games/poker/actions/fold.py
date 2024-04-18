@@ -11,6 +11,7 @@ class Fold(Action):
         super().__init__(name="Fold", player=player)
 
     def apply(self, game: PokerGame) -> Dict:
+        game.history.append((game.stage, self))
         game.round_players.remove(self.player)
         self.player.fold()
         return {"message": f"{self.player.name} folded"}

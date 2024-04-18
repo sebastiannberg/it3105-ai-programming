@@ -13,11 +13,16 @@ class Resolver:
         self.state_manager = state_manager
 
     def build_initial_subtree(self, state: PokerState, end_stage: str, end_depth: int):
+        # Assumes that the root node is a player node and not a chance node or terminal node
         root = PlayerNode(state, "player_one")
         queue = [(root, 0)]  # Queue of tuples (node, current_stage_depth)
 
         while queue:
             node, current_stage_depth = queue.pop(0)  # Dequeue the first item
+
+            # if node.state.stage == "showdown" and not any(entry[0] == "river" for entry in node.state.history):
+            print(node.state)
+            print()
 
             # Stop processing at the end stage and depth for that stage
             if node.state.stage == end_stage and current_stage_depth >= end_depth:
@@ -33,7 +38,7 @@ class Resolver:
                     child_state = self.state_manager.gen_player_child_state(node.state, node.player, action)
                     next_stage_depth = current_stage_depth + 1 if child_state.stage == node.state.stage else 0
 
-                    if node.state.stage != child_state.stage:
+                    if node.state.stage != child_state.stage and child_state.stage != "showdown":
                         # Create a Chance Node when transitioning to a new stage
                         child_node = ChanceNode(child_state, parent=node)
                     elif child_state.history[-1][2] == "fold" or child_state.stage == "showdown":
@@ -67,3 +72,4 @@ class Resolver:
         return count
 
     def bayesian_range_update(self, range_prior, action_probability, sigma):
+        pass

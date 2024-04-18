@@ -79,6 +79,7 @@ def apply_action():
         serialized_game_manager = cache.get("game_manager")
         game_manager = pickle.loads(serialized_game_manager)
 
+        print(game_manager.state_manager.gen_state_from_game(game_manager.game, game_manager.game.current_player))
         result = game_manager.apply_action(data["player"], data["name"])
 
         cache.set("game_manager", pickle.dumps(game_manager))

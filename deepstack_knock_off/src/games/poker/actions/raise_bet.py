@@ -27,7 +27,7 @@ class RaiseBet(Action):
         super().__init__(name=name, player=player)
 
     def apply(self, game: PokerGame) -> Dict:
-        game.stage_history.append(self)
+        game.history.append((game.stage, self))
         self.player.chips -= self.chip_cost
         game.current_bet += self.raise_amount
         game.pot += self.chip_cost

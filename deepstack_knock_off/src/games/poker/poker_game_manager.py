@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+import random
 
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
@@ -140,8 +141,10 @@ class PokerGameManager:
         self.assign_legal_actions_to_player(self.game.current_player.name)
 
         if self.poker_config["enable_resolver"]:
-            prob_resolver = self.poker_config["prob_resolver"]
-            print(prob_resolver)
+            if random.random() < self.poker_config["prob_resolver"]:
+                selected_action = self.game.current_player.make_decision_resolving()
+            else:
+                selected_action = self.game.current_player.make_decision_rollouts(self.oracle, self.game.public_cards, len(self.game.round_players)-1)
         else:
             selected_action = self.game.current_player.make_decision_rollouts(self.oracle, self.game.public_cards, len(self.game.round_players)-1)
         return selected_action.to_dict()
@@ -372,7 +375,6 @@ class PokerGameManager:
     def end_round_next_round(self):
         # Reset every player still in the game
         for player in self.game.game_players:
-            print(player.name)
             player.ready_for_new_round()
         self.game.round_players = self.game.game_players.copy()
         # Reset round variables
@@ -384,11 +386,8 @@ class PokerGameManager:
         # Start a new round
         self.assign_blind_roles()
         self.perform_blind_bets()
-        print("hello")
         self.deal_cards()
-        print("hallaa")
         self.assign_next_player()
-        print("jajjaj")
 
     def remove_busted_players(self):
         for player in self.game.game_players:
