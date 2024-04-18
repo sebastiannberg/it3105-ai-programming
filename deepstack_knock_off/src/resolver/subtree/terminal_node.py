@@ -10,5 +10,5 @@ class TerminalNode(Node):
         super().__init__(state, parent)
 
     # Override
-    def add_child(self, child_node: 'Node', edge_value: Any):
+    def add_child(self, child_node: Node, edge_value: Any):
         raise ValueError("Cannot add children to a terminal node")

@@ -13,4 +13,4 @@ class PokerState:
     player_two_bet: int
     pot: int
     stage: str
-    stage_history: List[Tuple[str, str]] # (player, action)
+    history: List[Tuple[str, str, str]] # (stage, player, action)

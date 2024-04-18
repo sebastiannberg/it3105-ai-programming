@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from games.poker.players.player import Player
     from games.poker.utils.deck import Deck
@@ -20,7 +20,7 @@ class PokerGame:
     deck: Deck
     public_cards: List[Card]
     stage: str
-    stage_history: List[Action]
+    history: List[Tuple[str, Action]] # (stage, action)
     pot: int
     current_bet: int
     ai_strategy: Optional[str]

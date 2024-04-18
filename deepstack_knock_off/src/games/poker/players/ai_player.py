@@ -8,12 +8,14 @@ from games.poker.poker_oracle import PokerOracle
 from games.poker.actions.fold import Fold
 from games.poker.actions.check import Check
 from games.poker.actions.raise_bet import RaiseBet
+from resolver.resolver import Resolver
 
 
 class AIPlayer(Player):
 
-    def __init__(self, name, initial_chips):
+    def __init__(self, name, initial_chips, state_manager):
         super().__init__(name, initial_chips)
+        self.resolver = Resolver(state_manager)
 
     def make_decision_rollouts(self, oracle: PokerOracle, public_cards: List[Card], num_opponent_players: int) -> Action:
         win_prob, tie_prob, lose_prob = oracle.perform_rollouts(self.hand, public_cards, num_opponent_players)

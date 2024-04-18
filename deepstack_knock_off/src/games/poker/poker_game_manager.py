@@ -31,7 +31,7 @@ class PokerGameManager:
             deck=self.oracle.gen_deck(self.poker_rules["deck_size"], shuffled=True),
             public_cards=[],
             stage="preflop",
-            stage_history=[],
+            history=[],
             pot=0,
             current_bet=0,
             ai_strategy=None
@@ -56,7 +56,8 @@ class PokerGameManager:
             legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet - player.player_bet), raise_amount=0, raise_type="call"))
         # Raise
         if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet) and not any(player.has_all_in or player.chips == 0 for player in self.game.round_players):
-            if len([action for action in self.game.stage_history if isinstance(action, RaiseBet) and action.raise_type=="raise"]) < self.poker_rules["max_num_raises_per_stage"]:
+            current_stage_history = [entry[1] for entry in self.game.history if entry[0] == self.game.stage]
+            if len([action for action in current_stage_history if isinstance(action, RaiseBet) and action.raise_type=="raise"]) < self.poker_rules["max_num_raises_per_stage"]:
                 legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet -player.player_bet + self.poker_rules["fixed_raise"]), raise_amount=self.poker_rules["fixed_raise"], raise_type="raise"))
         # All In (if player has chips but cannot call)
         if  player.player_bet < self.game.current_bet and player.chips < (self.game.current_bet - player.player_bet):
@@ -154,7 +155,7 @@ class PokerGameManager:
         players = []
         # Generate AI players
         for i in range(num_ai_players):
-            players.append(AIPlayer(name=f"AI Player {i+1}", initial_chips=self.poker_config["initial_chips"]))
+            players.append(AIPlayer(name=f"AI Player {i+1}", initial_chips=self.poker_config["initial_chips"], state_manager=self.state_manager))
         # Generate human players
         for i in range(num_human_players):
             players.append(HumanPlayer(name=f"Human Player {i+1}", initial_chips=self.poker_config["initial_chips"]))
@@ -308,7 +309,6 @@ class PokerGameManager:
             self.game.stage = stage_transitions.get(self.game.stage, self.game.stage)
             # Reset stage variables
             self.game.current_bet = 0
-            self.game.stage_history = []
             # Deal cards and assign the active player for the new stage
             self.deal_cards()
             self.assign_next_player(stage_change=True)
