@@ -19,7 +19,6 @@ class PokerGameManager:
         self.poker_config: Dict = poker_config
         self.poker_rules: Dict = poker_rules
         self.state_manager: PokerStateManager = PokerStateManager(poker_rules)
-        self.oracle: PokerOracle = PokerOracle()
         players = self.gen_poker_players(num_ai_players=self.poker_config["num_ai_players"], num_human_players=self.poker_config["num_human_players"])
         if len(players) > 2 and self.poker_config["enable_resolver"] == True:
             raise ValueError("Cannot use resolver when there are more than 2 players")
@@ -29,7 +28,7 @@ class PokerGameManager:
             small_blind_player=None,
             big_blind_player=None,
             current_player=None,
-            deck=self.oracle.gen_deck(self.poker_rules["deck_size"], shuffled=True),
+            deck=PokerOracle.gen_deck(self.poker_rules["deck_size"], shuffled=True),
             public_cards=[],
             stage="preflop",
             history=[],
@@ -144,9 +143,9 @@ class PokerGameManager:
             if random.random() < self.poker_config["prob_resolver"]:
                 selected_action = self.game.current_player.make_decision_resolving()
             else:
-                selected_action = self.game.current_player.make_decision_rollouts(self.oracle, self.game.public_cards, len(self.game.round_players)-1)
+                selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, len(self.game.round_players)-1)
         else:
-            selected_action = self.game.current_player.make_decision_rollouts(self.oracle, self.game.public_cards, len(self.game.round_players)-1)
+            selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, len(self.game.round_players)-1)
         return selected_action.to_dict()
 
     def gen_poker_players(self, num_ai_players: int, num_human_players: int) -> List[Player]:
@@ -324,13 +323,13 @@ class PokerGameManager:
     def showdown(self) -> List[Dict]:
         # Classify each player's hand and associate it with the player
         classified_hands = {
-            player: self.oracle.classify_poker_hand(player.hand, self.game.public_cards, player)
+            player: PokerOracle.classify_poker_hand(player.hand, self.game.public_cards, player)
             for player in self.game.round_players
         }
 
         # Find the best hand to compare with others
         best_hand = max(classified_hands.values(), key=lambda hand: (
-            self.oracle.hand_type_ranking[hand.category],
+            PokerOracle.hand_type_ranking[hand.category],
             hand.primary_value,
             hand.kickers
         ))
@@ -338,7 +337,7 @@ class PokerGameManager:
         # Filter winners based on the comparison, preserving original order
         winners = []
         for player, hand in classified_hands.items():
-            comparison_result = self.oracle.compare_poker_hands(hand, best_hand)
+            comparison_result = PokerOracle.compare_poker_hands(hand, best_hand)
             if comparison_result in ["player", "tie"]:
                 winners.append(player)
 
@@ -382,7 +381,7 @@ class PokerGameManager:
         self.game.current_bet = 0
         self.game.public_cards = []
         self.game.stage = "preflop"
-        self.deck = self.oracle.gen_deck(num_cards=52, shuffled=True)
+        self.deck = PokerOracle.gen_deck(num_cards=52, shuffled=True)
         # Start a new round
         self.assign_blind_roles()
         self.perform_blind_bets()

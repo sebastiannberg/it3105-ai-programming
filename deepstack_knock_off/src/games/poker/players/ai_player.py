@@ -1,6 +1,9 @@
 from typing import List
 import numpy as np
+import itertools
 
+from games.poker.poker_state_manager import PokerStateManager
+from games.poker.poker_game import PokerGame
 from games.poker.players.player import Player
 from games.poker.actions.action import Action
 from games.poker.utils.card import Card
@@ -8,17 +11,27 @@ from games.poker.poker_oracle import PokerOracle
 from games.poker.actions.fold import Fold
 from games.poker.actions.check import Check
 from games.poker.actions.raise_bet import RaiseBet
+from games.poker.utils.hand_label_generator import HandLabelGenerator
 from resolver.resolver import Resolver
 
 
 class AIPlayer(Player):
 
-    def __init__(self, name, initial_chips, state_manager):
+    def __init__(self, name, initial_chips, state_manager: PokerStateManager):
         super().__init__(name, initial_chips)
+        self.state_manager = state_manager
         self.resolver = Resolver(state_manager)
 
-    def make_decision_rollouts(self, oracle: PokerOracle, public_cards: List[Card], num_opponent_players: int) -> Action:
-        win_prob, tie_prob, lose_prob = oracle.perform_rollouts(self.hand, public_cards, num_opponent_players)
+        deck = PokerOracle.gen_deck(num_cards=52, shuffled=False)
+        possible_hands = list(itertools.combinations(deck.cards, 2))
+        hand_labels = [HandLabelGenerator.get_hand_label(hand) for hand in possible_hands]
+        hand_label_to_index = {label: idx for idx, label in enumerate(hand_labels)}
+        # Range vectors
+        self.r1 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
+        self.r2 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
+
+    def make_decision_rollouts(self, public_cards: List[Card], num_opponent_players: int) -> Action:
+        win_prob, tie_prob, lose_prob = PokerOracle.perform_rollouts(self.hand, public_cards, num_opponent_players)
         print(win_prob, tie_prob, lose_prob)
 
         # Normalize probabilities
@@ -55,5 +68,6 @@ class AIPlayer(Player):
         chosen_action = np.random.choice(actions, p=probabilities)
         return chosen_action
 
-    def make_decision_resolving(self) -> Action:
-        pass
+    def make_decision_resolving(self, game: PokerGame) -> Action:
+        state = self.state_manager.gen_state_from_game(game, player_one_perspective=self)
+        self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=5)

@@ -19,7 +19,6 @@ poker_config = {
 poker_rules = {
     "deck_size": 52,
     "fixed_raise": 4,
-    "all_in_disabled": True,
     "max_num_raises_per_stage": 4
 }
 game_manager = PokerGameManager(poker_config, poker_rules)
@@ -43,7 +42,7 @@ parent_state = PokerState(
     player_two_bet=0,
     pot=20,
     stage="flop",
-    stage_history=[]
+    history=[]
 )
 child_states = state_manager.gen_chance_child_states(parent_state, max_num_children=100)
 assert len(child_states) == 100
@@ -58,7 +57,7 @@ parent_state = PokerState(
     player_two_bet=0,
     pot=20,
     stage="turn",
-    stage_history=[]
+    history=[]
 )
 child_states = state_manager.gen_chance_child_states(parent_state)
 assert len(child_states) == 49
@@ -72,10 +71,9 @@ game_manager.apply_action("AI Player 1", "Call (2)")
 game_manager.assign_legal_actions_to_player("Human Player 1")
 game_manager.apply_action("Human Player 1", "Check")
 root_state = state_manager.gen_state_from_game(game_manager.game, player_one_perspective=game_manager.game.game_players[0])
-print(root_state)
 legal_actions = state_manager.find_legal_actions(root_state, "player_one")
-print(legal_actions)
+assert set(["fold", "check", "raise 4"]) == set(legal_actions)
 child_state = state_manager.gen_player_child_state(root_state, "player_one", "check")
-print(child_state)
+assert child_state.history[-1] == ("flop", "player_one", "check")
 child_state = state_manager.gen_player_child_state(child_state, "player_two", "check")
-print(child_state)
+assert child_state.stage == "turn"

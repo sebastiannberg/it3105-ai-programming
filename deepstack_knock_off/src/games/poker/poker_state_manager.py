@@ -19,7 +19,12 @@ class PokerStateManager:
 
     def __init__(self, poker_rules: Dict):
         self.poker_rules = poker_rules
-        self.oracle: PokerOracle = PokerOracle()
+        self.stage_change = {
+            "preflop": "flop",
+            "flop": "turn",
+            "turn": "river",
+            "river": "showdown"
+        }
 
     def gen_state_from_game(self, poker_game: PokerGame, player_one_perspective: Player) -> PokerState:
         state_history = []
@@ -87,12 +92,6 @@ class PokerStateManager:
         return legal_actions
 
     def gen_player_child_state(self, parent_state: PokerState, player: str, action: str):
-        stage_change = {
-            "preflop": "flop",
-            "flop": "turn",
-            "turn": "river",
-            "river": "showdown"
-        }
         child_state = deepcopy(parent_state)
         if "fold" in action:
             if player == "player_one":
@@ -108,7 +107,7 @@ class PokerStateManager:
             double_check = "check" in parent_state.history[-1][2] and parent_state.history[-1][0] == parent_state.stage
             if parent_state.stage == "preflop" or double_check:
                 # Next stage
-                child_state.stage = stage_change[parent_state.stage]
+                child_state.stage = self.stage_change[parent_state.stage]
                 child_state.player_one_bet = 0
                 child_state.player_two_bet = 0
         elif "call" in action:
@@ -128,7 +127,7 @@ class PokerStateManager:
                 child_state.player_two_bet = 0
             elif parent_state.stage in ["flop", "turn", "river"] or parent_state.stage == "preflop" and len(parent_state.history) != 2:
                 # Next stage
-                child_state.stage = stage_change[parent_state.stage]
+                child_state.stage = self.stage_change[parent_state.stage]
                 child_state.player_one_bet = 0
                 child_state.player_two_bet = 0
         elif "raise" in action:
@@ -163,7 +162,7 @@ class PokerStateManager:
     def gen_chance_child_states(self, parent_state: PokerState, max_num_children: Optional[int] = None) -> List[PokerState]:
         public_cards_set = set((card.rank, card.suit) for card in parent_state.public_cards)
 
-        deck = self.oracle.gen_deck(num_cards=self.poker_rules["deck_size"], shuffled=True)
+        deck = PokerOracle.gen_deck(num_cards=self.poker_rules["deck_size"], shuffled=True)
         deck = [card for card in deck.cards if (card.rank, card.suit) not in public_cards_set]
 
         if parent_state.stage == "flop":
