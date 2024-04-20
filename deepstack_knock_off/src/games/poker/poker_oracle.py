@@ -30,12 +30,12 @@ class PokerOracle:
     def gen_deck(num_cards: int, shuffled: bool) -> Deck:
         if num_cards % 4:
             raise ValueError(f"The number of cards must be divisible evenly by 4 to form a complete deck but was {num_cards}")
-        num_ranks = int(num_cards / 4)
-        if num_ranks < 5:
-            raise ValueError(f"The number of ranks need to be at least 5 but was {num_ranks}")
+        if num_cards < 24:
+            raise ValueError(f"The number of cards must be 24 or greater but was {num_cards}")
         ranks = ("A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2")
         suits = ("spades", "hearts", "diamonds", "clubs")
         cards = []
+        num_ranks = int(num_cards / 4)
         for rank in ranks[:num_ranks]:
             for suit in suits:
                 cards.append(Card(rank, suit))
@@ -45,7 +45,16 @@ class PokerOracle:
         return deck
 
     @staticmethod
-    def gen_utility_matrix(public_cards: List[Card]):
+    def get_possible_hands(num_cards_deck: int):
+        deck = PokerOracle.gen_deck(num_cards=num_cards_deck, shuffled=False)
+        possible_hands = list(itertools.combinations(deck.cards, 2))
+        hand_labels = [HandLabelGenerator.get_hand_label(hand) for hand in possible_hands]
+        # Creating a dictionary to map hand labels to their indices in possible hands
+        hand_label_to_index = {label: idx for idx, label in enumerate(hand_labels)}
+        return possible_hands, hand_label_to_index
+
+    @staticmethod
+    def gen_utility_matrix(public_cards: List[Card], num_cards_deck: int):
         print("\nStarted gen_utility_matrix")
         start_time = time.time()
 
@@ -54,14 +63,10 @@ class PokerOracle:
 
         public_cards_set = set((card.rank, card.suit) for card in public_cards)
 
-        deck = PokerOracle.gen_deck(num_cards=52, shuffled=False)
-        possible_hands = list(itertools.combinations(deck.cards, 2))
-        hand_labels = [HandLabelGenerator.get_hand_label(hand) for hand in possible_hands]
+        possible_hands, hand_label_to_index = PokerOracle.get_possible_hands(num_cards_deck=num_cards_deck)
 
         # Initialize utility matrix with zeros
         utility_matrix = np.zeros((len(possible_hands), len(possible_hands)), dtype=np.int8)
-        # Creating a dictionary to map hand labels to their indices
-        hand_label_to_index = {label: idx for idx, label in enumerate(hand_labels)}
 
         for player_hand_index, player_hand in enumerate(possible_hands):
             print(f"\rPlayer hand {player_hand_index+1}", end="")
@@ -343,7 +348,7 @@ class PokerOracle:
                 return "tie"
 
     @staticmethod
-    def perform_rollouts(player_hand: List[Card], public_cards: List[Card], num_opponent_players: int = 1, num_rollouts: int = 5000):
+    def perform_rollouts(player_hand: List[Card], public_cards: List[Card], num_cards_deck: int,  num_opponent_players: int = 1, num_rollouts: int = 5000):
         if len(public_cards) not in (0, 3, 4, 5):
             raise ValueError("Length of public cards must be 0, 3, 4 or 5 when performing rollouts")
         if len(player_hand) != 2:
@@ -352,7 +357,7 @@ class PokerOracle:
         wins, ties, losses = 0, 0, 0
         for _ in range(num_rollouts):
             # Generate new deck for rollout
-            deck = PokerOracle.gen_deck(52, shuffled=True)
+            deck = PokerOracle.gen_deck(num_cards=num_cards_deck, shuffled=True)
             # Create a set for easy comparison
             player_and_public_cards_set = {(card.rank, card.suit) for card in player_hand + public_cards}
             # Remove player cards and public cards from deck

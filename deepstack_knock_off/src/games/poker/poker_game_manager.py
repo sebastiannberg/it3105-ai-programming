@@ -143,9 +143,9 @@ class PokerGameManager:
             if random.random() < self.poker_config["prob_resolver"]:
                 selected_action = self.game.current_player.make_decision_resolving()
             else:
-                selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, len(self.game.round_players)-1)
+                selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, self.poker_rules["deck_size"], len(self.game.round_players)-1)
         else:
-            selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, len(self.game.round_players)-1)
+            selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, self.poker_rules["deck_size"], len(self.game.round_players)-1)
         return selected_action.to_dict()
 
     def gen_poker_players(self, num_ai_players: int, num_human_players: int) -> List[Player]:

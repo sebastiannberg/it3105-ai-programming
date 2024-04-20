@@ -1,5 +1,5 @@
 {
-    "deck_size": 52,
-    "fixed_raise": 4,
-    "max_num_raises_per_stage": 4
+    "deck_size": 24,
+    "max_num_raises_per_stage": 2,
+    "fixed_raise": 4
 }

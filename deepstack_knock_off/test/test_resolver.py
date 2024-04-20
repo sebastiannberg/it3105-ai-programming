@@ -1,4 +1,3 @@
-import random
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
@@ -6,10 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "s
 from games.poker.poker_game_manager import PokerGameManager
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.players.ai_player import AIPlayer
-from games.poker.utils.card import Card
-from games.poker.poker_state import PokerState
 from resolver.resolver import Resolver
-from resolver.subtree.terminal_node import TerminalNode
 
 poker_config = {
     "num_ai_players": 1,
@@ -21,9 +17,9 @@ poker_config = {
     "big_blind_amount": 4
 }
 poker_rules = {
-    "deck_size": 52,
-    "fixed_raise": 4,
-    "max_num_raises_per_stage": 4
+    "deck_size": 24,
+    "max_num_raises_per_stage": 2,
+    "fixed_raise": 4
 }
 resolver = Resolver(PokerStateManager(poker_rules))
 

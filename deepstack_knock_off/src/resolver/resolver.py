@@ -1,9 +1,11 @@
 import numpy as np
+import math
 import time
 
 from games.poker.poker_state import PokerState
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
+from games.poker.utils.hand_label_generator import HandLabelGenerator
 from resolver.subtree.node import Node
 from resolver.subtree.player_node import PlayerNode
 from resolver.subtree.chance_node import ChanceNode
@@ -20,7 +22,7 @@ class Resolver:
         print("Started build_initial_subtree")
         start_time = time.time()
         # Assumes that the root node is a player node and not a chance node or terminal node
-        root = PlayerNode(state, "player_one")
+        root = PlayerNode(state, "player_one", stage_depth=0)
         queue = [(root, 0)]  # Queue of tuples (node, current_stage_depth)
 
         i = 0
@@ -45,16 +47,16 @@ class Resolver:
 
                     if node.state.stage != child_state.stage and child_state.stage != "showdown":
                         # Create a Chance Node when transitioning to a new stage
-                        child_node = ChanceNode(child_state, parent=node)
+                        child_node = ChanceNode(child_state, parent=node, stage_depth=next_stage_depth)
                     elif child_state.history[-1][2] == "fold" or child_state.stage == "showdown":
                         # Create a Terminal Node for game-ending actions
-                        child_node = TerminalNode(child_state, parent=node)
-                        child_node.set_utility_matrix(node.utility_matrix)
+                        child_node = TerminalNode(child_state, parent=node, stage_depth=next_stage_depth)
+                        child_node.set_utility_matrix(node.utility_matrix, node.hand_label_to_index)
                     else:
                         # Continue with a Player Node if still in the same gameplay phase
                         next_player = self.determine_next_player(state=child_state, current_player=node.player, new_stage=False)
-                        child_node = PlayerNode(child_state, player=next_player, parent=node)
-                        child_node.set_utility_matrix(node.utility_matrix)
+                        child_node = PlayerNode(child_state, player=next_player, parent=node, stage_depth=next_stage_depth)
+                        child_node.set_utility_matrix(node.utility_matrix, node.hand_label_to_index)
                     edge_value = child_state.history[-1][2]
                     node.add_child(child_node, edge_value)
                     queue.append((child_node, next_stage_depth))
@@ -64,10 +66,10 @@ class Resolver:
                 child_states = self.state_manager.gen_chance_child_states(node.state, max_num_children=subtree_config["max_chance_node_children"])
                 for child_state in child_states:
                     next_player = self.determine_next_player(state=child_state, current_player=None, new_stage=True)
-                    child_node = PlayerNode(child_state, player=next_player, parent=node)
+                    child_node = PlayerNode(child_state, player=next_player, parent=node, stage_depth=1)
                     # Generate new utility matrix for descendants
-                    utility_matrix = PokerOracle.gen_utility_matrix(child_state.public_cards)
-                    child_node.set_utility_matrix(utility_matrix)
+                    utility_matrix, hand_label_to_index = PokerOracle.gen_utility_matrix(child_state.public_cards, num_cards_deck=self.state_manager.poker_rules["deck_size"])
+                    child_node.set_utility_matrix(utility_matrix, hand_label_to_index)
                     parent_public_card_set = {(card.rank, card.suit) for card in node.state.public_cards}
                     edge_value = [card for card in child_state.public_cards if (card.rank, card.suit) not in parent_public_card_set]
                     node.add_child(child_node, edge_value)
@@ -141,23 +143,69 @@ class Resolver:
         pass
 
     def subtree_traversal_rollout(self, node: Node, r1, r2, end_stage, end_depth):
-        if node.state.stage == "showdown":
-            v1 = np.dot(node.utility_matrix, r2)
-            v2 = np.dot(-r1, node.utility_matrix)
+        possible_hands, hand_label_to_index = PokerOracle.get_possible_hands(num_cards_deck=self.state_manager.poker_rules["deck_size"])
+
+        if isinstance(node, TerminalNode):
+            if node.state.stage == "showdown":
+                print("showdown")
+                v1 = np.dot(node.utility_matrix, r2.T)
+                v2 = np.dot(-r1, node.utility_matrix)
+            else:
+                # A player has folded
+                print("Fold node check:", node.state.history[-1][2], node.__class__.__name__)
+                loser = node.state.history[-1][1]
+                v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+                v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+                v_fold = node.state.pot / subtree_config["average_pot_size"]
+                public_cards_set = set((card.rank, card.suit) for card in node.state.public_cards)
+                for hand in possible_hands:
+                    # If a card in the hand is also in the set of public cards, go to the next hand
+                    if any((card.rank, card.suit) in public_cards_set for card in hand):
+                        continue
+                    hand_label = HandLabelGenerator.get_hand_label(hand)
+                    index = hand_label_to_index[hand_label]
+                    # TODO double check that this indexing is correct
+                    if loser == "player_one":
+                        v1[0, index] = -v_fold
+                        v2[0, index] = v_fold
+                    elif loser == "player_two":
+                        v1[0, index] = v_fold
+                        v2[0, index] = -v_fold
+        elif node.state.stage == end_stage and node.stage_depth == end_depth:
+            print("Run nerual network...")
+            v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
+        elif isinstance(node, PlayerNode):
+            v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+            v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+            for child, action in node.children:
+                if node.player == "player_one":
+                    updated_range = self.bayesian_range_update(r1, action, node.strategy)
+                    v1, v2 = self.subtree_traversal_rollout(child, updated_range, r2, end_stage, end_depth)
+                elif node.player == "player_two":
+                    updated_range = self.bayesian_range_update(r2, action, node.strategy)
+                    v1_action, v2_action = self.subtree_traversal_rollout(child, r1, updated_range, end_stage, end_depth)
+                for hand in possible_hands:
+                    hand_label = HandLabelGenerator.get_hand_label(hand)
+                    index = hand_label_to_index[hand_label]
+                    # TODO double check that this is correct, maybe v1 * v2 instead but not sure
+                    v1[0, index] += node.get_strategy(hand, action) * v1_action[0, index]
+                    v2[0, index] += node.get_strategy(hand, action) * v2_action[0, index]
+        else:
+            # Enter this block if node is a chance node
+            print("chance node check:", node.__class__.__name__)
+            v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+            v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+            for child, event in node.children:
+                v1_event, v2_event = self.subtree_traversal_rollout(child, r1, r2, end_stage, end_depth)
 
         return v1, v2
 
 
-
     def resolve(self, state: PokerState, r1, r2, end_stage, end_depth, T):
-        # If stage is river generate to showdown stage
-        if state.stage == "river":
-            root = self.build_initial_subtree(state, end_stage="showdown", end_depth=0)
-        # Build tree from current stage to next stage with depth 1
-        else:
-            next_stage = self.state_manager.stage_change[state.stage]
-            root = self.build_initial_subtree(state, end_stage=next_stage, end_depth=1)
-        print(self.count_nodes(root))
+        root = self.build_initial_subtree(state, end_stage, end_depth)
 
         for _ in range(T):
             v1, v2 = self.subtree_traversal_rollout(root, r1, r2, end_stage, end_depth)
+
+    def run_neural_network(self, stage, state, r1, r2):
+        return r1, r2

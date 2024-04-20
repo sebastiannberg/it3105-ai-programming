@@ -103,6 +103,11 @@ def next_round():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/ai-method", methods=["GET"])
+def ai_method():
+    # TODO return ai method "rollout" or "resolve" based on probability in gamemanger config
+    pass
+
 @app.route("/ai-decision", methods=["GET"])
 def ai_decision():
     try:

@@ -11,7 +11,6 @@ from games.poker.poker_oracle import PokerOracle
 from games.poker.actions.fold import Fold
 from games.poker.actions.check import Check
 from games.poker.actions.raise_bet import RaiseBet
-from games.poker.utils.hand_label_generator import HandLabelGenerator
 from resolver.resolver import Resolver
 
 
@@ -19,19 +18,14 @@ class AIPlayer(Player):
 
     def __init__(self, name, initial_chips, state_manager: PokerStateManager):
         super().__init__(name, initial_chips)
-        self.state_manager = state_manager
         self.resolver = Resolver(state_manager)
-
-        deck = PokerOracle.gen_deck(num_cards=52, shuffled=False)
-        possible_hands = list(itertools.combinations(deck.cards, 2))
-        hand_labels = [HandLabelGenerator.get_hand_label(hand) for hand in possible_hands]
-        hand_label_to_index = {label: idx for idx, label in enumerate(hand_labels)}
-        # Range vectors
+        self.state_manager = state_manager
+        possible_hands, _ = PokerOracle.get_possible_hands(num_cards_deck=self.state_manager.poker_rules["deck_size"])
         self.r1 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
         self.r2 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
 
-    def make_decision_rollouts(self, public_cards: List[Card], num_opponent_players: int) -> Action:
-        win_prob, tie_prob, lose_prob = PokerOracle.perform_rollouts(self.hand, public_cards, num_opponent_players)
+    def make_decision_rollouts(self, public_cards: List[Card], num_cards_deck: int, num_opponent_players: int) -> Action:
+        win_prob, tie_prob, lose_prob = PokerOracle.perform_rollouts(self.hand, public_cards, num_cards_deck, num_opponent_players)
         print(win_prob, tie_prob, lose_prob)
 
         # Normalize probabilities
@@ -70,4 +64,10 @@ class AIPlayer(Player):
 
     def make_decision_resolving(self, game: PokerGame) -> Action:
         state = self.state_manager.gen_state_from_game(game, player_one_perspective=self)
-        self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=5)
+        # If stage is river, build tree to showdown stage
+        if state.stage == "river":
+            self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=5)
+        # Else build tree to next stage with depth 1
+        else:
+            next_stage = self.state_manager.stage_change[state.stage]
+            self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=5)
