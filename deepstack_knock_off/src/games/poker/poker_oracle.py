@@ -45,16 +45,7 @@ class PokerOracle:
         return deck
 
     @staticmethod
-    def get_possible_hands(num_cards_deck: int):
-        deck = PokerOracle.gen_deck(num_cards=num_cards_deck, shuffled=False)
-        possible_hands = list(itertools.combinations(deck.cards, 2))
-        hand_labels = [HandLabelGenerator.get_hand_label(hand) for hand in possible_hands]
-        # Creating a dictionary to map hand labels to their indices in possible hands
-        hand_label_to_index = {label: idx for idx, label in enumerate(hand_labels)}
-        return possible_hands, hand_label_to_index
-
-    @staticmethod
-    def gen_utility_matrix(public_cards: List[Card], num_cards_deck: int):
+    def gen_utility_matrix(public_cards: List[Card], deck_size: int):
         print("\nStarted gen_utility_matrix")
         start_time = time.time()
 
@@ -63,7 +54,7 @@ class PokerOracle:
 
         public_cards_set = set((card.rank, card.suit) for card in public_cards)
 
-        possible_hands, hand_label_to_index = PokerOracle.get_possible_hands(num_cards_deck=num_cards_deck)
+        possible_hands, _, _ = HandLabelGenerator.get_possible_hands_with_indexing(deck_size=deck_size)
 
         # Initialize utility matrix with zeros
         utility_matrix = np.zeros((len(possible_hands), len(possible_hands)), dtype=np.int8)
@@ -98,7 +89,7 @@ class PokerOracle:
         print()
         print(f"gen_utility_matrix took {duration_minutes:.2f} minutes to run")
 
-        return utility_matrix, hand_label_to_index
+        return utility_matrix
 
     @staticmethod
     def classify_poker_hand(hand: List[Card], public_cards: List[Card], player: Optional[Player] = None) -> HandType:

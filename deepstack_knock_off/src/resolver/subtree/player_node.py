@@ -10,3 +10,7 @@ class PlayerNode(Node):
         super().__init__(state, parent, stage_depth)
         self.player = player
         self.strategy = None
+
+    def get_action_probability(self, hand_label: str, action: str):
+        return 0.5 # TODO
+        # return self.strategy[hand_index, action]

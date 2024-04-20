@@ -68,8 +68,8 @@ class Resolver:
                     next_player = self.determine_next_player(state=child_state, current_player=None, new_stage=True)
                     child_node = PlayerNode(child_state, player=next_player, parent=node, stage_depth=1)
                     # Generate new utility matrix for descendants
-                    utility_matrix, hand_label_to_index = PokerOracle.gen_utility_matrix(child_state.public_cards, num_cards_deck=self.state_manager.poker_rules["deck_size"])
-                    child_node.set_utility_matrix(utility_matrix, hand_label_to_index)
+                    utility_matrix = PokerOracle.gen_utility_matrix(child_state.public_cards, deck_size=self.state_manager.poker_rules["deck_size"])
+                    child_node.set_utility_matrix(utility_matrix)
                     parent_public_card_set = {(card.rank, card.suit) for card in node.state.public_cards}
                     edge_value = [card for card in child_state.public_cards if (card.rank, card.suit) not in parent_public_card_set]
                     node.add_child(child_node, edge_value)
@@ -139,12 +139,27 @@ class Resolver:
                 print(edge)
                 print("  |  ")
 
-    def bayesian_range_update(self, range_prior, action, average_strategy):
-        pass
+    def bayesian_range_update(self, range_prior, action, node_strategy, action_to_index):
+        # Manually
+        possible_hands, hand_label_to_index, _ = HandLabelGenerator.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
+        for hand in possible_hands:
+            hand_label = HandLabelGenerator.get_hand_label(hand)
+            print(hand_label)
+            prob_action_hand = node_strategy[hand_label_to_index[hand_label], action_to_index[action]]
+            print(prob_action_hand)
+            prob_hand = range_prior[0, hand_label_to_index[hand_label]]
+            print(prob_hand)
+            prob_action = np.sum(node_strategy[action_to_index[action]])
+            print(prob_action)
+            updated_range = (prob_action_hand * prob_hand) / prob_action
+        print()
+        # With numpy TODO
+
+        return updated_range
 
     def subtree_traversal_rollout(self, node: Node, r1, r2, end_stage, end_depth):
-        possible_hands, hand_label_to_index = PokerOracle.get_possible_hands(num_cards_deck=self.state_manager.poker_rules["deck_size"])
-
+        # print("range vectors", r1, r2)
+        possible_hands, hand_label_to_index, _ = HandLabelGenerator.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
         if isinstance(node, TerminalNode):
             if node.state.stage == "showdown":
                 print("showdown")
@@ -152,7 +167,7 @@ class Resolver:
                 v2 = np.dot(-r1, node.utility_matrix)
             else:
                 # A player has folded
-                print("Fold node check:", node.state.history[-1][2], node.__class__.__name__)
+                print("fold node:", node.state.history[-1][2], node.__class__.__name__)
                 loser = node.state.history[-1][1]
                 v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
                 v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
@@ -172,15 +187,16 @@ class Resolver:
                         v1[0, index] = v_fold
                         v2[0, index] = -v_fold
         elif node.state.stage == end_stage and node.stage_depth == end_depth:
-            print("Run nerual network...")
+            print("Run neural network...")
             v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
         elif isinstance(node, PlayerNode):
+            print("player node:", node.__class__.__name__)
             v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
             v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
             for child, action in node.children:
                 if node.player == "player_one":
                     updated_range = self.bayesian_range_update(r1, action, node.strategy)
-                    v1, v2 = self.subtree_traversal_rollout(child, updated_range, r2, end_stage, end_depth)
+                    v1_action, v2_action = self.subtree_traversal_rollout(child, updated_range, r2, end_stage, end_depth)
                 elif node.player == "player_two":
                     updated_range = self.bayesian_range_update(r2, action, node.strategy)
                     v1_action, v2_action = self.subtree_traversal_rollout(child, r1, updated_range, end_stage, end_depth)
@@ -188,18 +204,18 @@ class Resolver:
                     hand_label = HandLabelGenerator.get_hand_label(hand)
                     index = hand_label_to_index[hand_label]
                     # TODO double check that this is correct, maybe v1 * v2 instead but not sure
-                    v1[0, index] += node.get_strategy(hand, action) * v1_action[0, index]
-                    v2[0, index] += node.get_strategy(hand, action) * v2_action[0, index]
+                    v1[0, index] += node.get_action_probability(hand_label=hand_label, action=action) * v1_action[0, index]
+                    v2[0, index] += node.get_action_probability(hand_label=hand_label, action=action) * v2_action[0, index]
         else:
-            # Enter this block if node is a chance node
-            print("chance node check:", node.__class__.__name__)
+            # Entering this block if node is a chance node
+            print("chance node:", node.__class__.__name__)
             v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
             v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
-            for child, event in node.children:
+            for child, _ in node.children:
                 v1_event, v2_event = self.subtree_traversal_rollout(child, r1, r2, end_stage, end_depth)
-
+                v1 += v1_event/len(node.children)
+                v2 += v2_event/len(node.children)
         return v1, v2
-
 
     def resolve(self, state: PokerState, r1, r2, end_stage, end_depth, T):
         root = self.build_initial_subtree(state, end_stage, end_depth)

@@ -4,6 +4,7 @@ import itertools
 
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_game import PokerGame
+from games.poker.utils.hand_label_generator import HandLabelGenerator
 from games.poker.players.player import Player
 from games.poker.actions.action import Action
 from games.poker.utils.card import Card
@@ -20,7 +21,7 @@ class AIPlayer(Player):
         super().__init__(name, initial_chips)
         self.resolver = Resolver(state_manager)
         self.state_manager = state_manager
-        possible_hands, _ = PokerOracle.get_possible_hands(num_cards_deck=self.state_manager.poker_rules["deck_size"])
+        possible_hands, _, _ = HandLabelGenerator.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
         self.r1 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
         self.r2 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
 
@@ -66,8 +67,8 @@ class AIPlayer(Player):
         state = self.state_manager.gen_state_from_game(game, player_one_perspective=self)
         # If stage is river, build tree to showdown stage
         if state.stage == "river":
-            self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=5)
+            self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=1)
         # Else build tree to next stage with depth 1
         else:
             next_stage = self.state_manager.stage_change[state.stage]
-            self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=5)
+            self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=1)
