@@ -1,3 +1,4 @@
+from typing import Dict
 import numpy as np
 import math
 import time
@@ -51,15 +52,17 @@ class Resolver:
                     elif child_state.history[-1][2] == "fold" or child_state.stage == "showdown":
                         # Create a Terminal Node for game-ending actions
                         child_node = TerminalNode(child_state, parent=node, stage_depth=next_stage_depth)
-                        child_node.set_utility_matrix(node.utility_matrix, node.hand_label_to_index)
+                        child_node.set_utility_matrix(node.utility_matrix)
                     else:
                         # Continue with a Player Node if still in the same gameplay phase
                         next_player = self.determine_next_player(state=child_state, current_player=node.player, new_stage=False)
                         child_node = PlayerNode(child_state, player=next_player, parent=node, stage_depth=next_stage_depth)
-                        child_node.set_utility_matrix(node.utility_matrix, node.hand_label_to_index)
+                        child_node.set_utility_matrix(node.utility_matrix)
                     edge_value = child_state.history[-1][2]
                     node.add_child(child_node, edge_value)
                     queue.append((child_node, next_stage_depth))
+                # We can initialize the strategy matrix now that the children are connected to the parent
+                node.init_strategy_matrix(deck_size=self.state_manager.poker_rules["deck_size"])
 
             elif isinstance(node, ChanceNode):
                 # Handle chance node children, initiating new stage
@@ -139,27 +142,22 @@ class Resolver:
                 print(edge)
                 print("  |  ")
 
-    def bayesian_range_update(self, range_prior, action, node_strategy, action_to_index):
-        # Manually
-        possible_hands, hand_label_to_index, _ = HandLabelGenerator.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
+    def bayesian_range_update(self, range_prior: np.ndarray, action: str, strategy_matrix: np.ndarray, action_to_index: Dict[str, int]):
+        updated_range = np.copy(range_prior)
+        possible_hands, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
         for hand in possible_hands:
             hand_label = HandLabelGenerator.get_hand_label(hand)
-            print(hand_label)
-            prob_action_hand = node_strategy[hand_label_to_index[hand_label], action_to_index[action]]
-            print(prob_action_hand)
+            prob_action_hand = strategy_matrix[hand_label_to_index[hand_label], action_to_index[action]]
             prob_hand = range_prior[0, hand_label_to_index[hand_label]]
-            print(prob_hand)
-            prob_action = np.sum(node_strategy[action_to_index[action]])
-            print(prob_action)
-            updated_range = (prob_action_hand * prob_hand) / prob_action
-        print()
-        # With numpy TODO
-
+            prob_action = np.sum(strategy_matrix[:, action_to_index[action]]) / np.sum(strategy_matrix)
+            updated_range_value = (prob_action_hand * prob_hand) / prob_action
+            updated_range[0, hand_label_to_index[hand_label]] = updated_range_value
+        # TODO with numpy
         return updated_range
 
     def subtree_traversal_rollout(self, node: Node, r1, r2, end_stage, end_depth):
         # print("range vectors", r1, r2)
-        possible_hands, hand_label_to_index, _ = HandLabelGenerator.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
+        possible_hands, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
         if isinstance(node, TerminalNode):
             if node.state.stage == "showdown":
                 print("showdown")
@@ -195,10 +193,10 @@ class Resolver:
             v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
             for child, action in node.children:
                 if node.player == "player_one":
-                    updated_range = self.bayesian_range_update(r1, action, node.strategy)
+                    updated_range = self.bayesian_range_update(r1, action, node.strategy_matrix, node.action_to_index)
                     v1_action, v2_action = self.subtree_traversal_rollout(child, updated_range, r2, end_stage, end_depth)
                 elif node.player == "player_two":
-                    updated_range = self.bayesian_range_update(r2, action, node.strategy)
+                    updated_range = self.bayesian_range_update(r2, action, node.strategy_matrix, node.action_to_index)
                     v1_action, v2_action = self.subtree_traversal_rollout(child, r1, updated_range, end_stage, end_depth)
                 for hand in possible_hands:
                     hand_label = HandLabelGenerator.get_hand_label(hand)

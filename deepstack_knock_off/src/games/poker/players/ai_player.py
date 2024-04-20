@@ -1,10 +1,8 @@
 from typing import List
 import numpy as np
-import itertools
 
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_game import PokerGame
-from games.poker.utils.hand_label_generator import HandLabelGenerator
 from games.poker.players.player import Player
 from games.poker.actions.action import Action
 from games.poker.utils.card import Card
@@ -21,7 +19,7 @@ class AIPlayer(Player):
         super().__init__(name, initial_chips)
         self.resolver = Resolver(state_manager)
         self.state_manager = state_manager
-        possible_hands, _, _ = HandLabelGenerator.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
+        possible_hands, _, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
         self.r1 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
         self.r2 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
 
