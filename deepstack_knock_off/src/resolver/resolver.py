@@ -18,6 +18,9 @@ class Resolver:
 
     def __init__(self, state_manager: PokerStateManager) -> None:
         self.state_manager = state_manager
+        possible_hands, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
+        self.possible_hands = possible_hands
+        self.hand_label_to_index = hand_label_to_index
 
     def build_initial_subtree(self, state: PokerState, end_stage: str, end_depth: int):
         print("Started build_initial_subtree")
@@ -62,7 +65,7 @@ class Resolver:
                     node.add_child(child_node, edge_value)
                     queue.append((child_node, next_stage_depth))
                 # We can initialize the strategy matrix now that the children are connected to the parent
-                node.init_strategy_matrix(deck_size=self.state_manager.poker_rules["deck_size"])
+                node.init_strategy_and_regret_matrix(deck_size=self.state_manager.poker_rules["deck_size"])
 
             elif isinstance(node, ChanceNode):
                 # Handle chance node children, initiating new stage
@@ -144,20 +147,18 @@ class Resolver:
 
     def bayesian_range_update(self, range_prior: np.ndarray, action: str, strategy_matrix: np.ndarray, action_to_index: Dict[str, int]):
         updated_range = np.copy(range_prior)
-        possible_hands, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
-        for hand in possible_hands:
+        for hand in self.possible_hands:
             hand_label = HandLabelGenerator.get_hand_label(hand)
-            prob_action_hand = strategy_matrix[hand_label_to_index[hand_label], action_to_index[action]]
-            prob_hand = range_prior[0, hand_label_to_index[hand_label]]
+            prob_action_hand = strategy_matrix[self.hand_label_to_index[hand_label], action_to_index[action]]
+            prob_hand = range_prior[0, self.hand_label_to_index[hand_label]]
             prob_action = np.sum(strategy_matrix[:, action_to_index[action]]) / np.sum(strategy_matrix)
             updated_range_value = (prob_action_hand * prob_hand) / prob_action
-            updated_range[0, hand_label_to_index[hand_label]] = updated_range_value
+            updated_range[0, self.hand_label_to_index[hand_label]] = updated_range_value
         # TODO with numpy
         return updated_range
 
     def subtree_traversal_rollout(self, node: Node, r1, r2, end_stage, end_depth):
         # print("range vectors", r1, r2)
-        possible_hands, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
         if isinstance(node, TerminalNode):
             if node.state.stage == "showdown":
                 print("showdown")
@@ -167,16 +168,16 @@ class Resolver:
                 # A player has folded
                 print("fold node:", node.state.history[-1][2], node.__class__.__name__)
                 loser = node.state.history[-1][1]
-                v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
-                v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+                v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
+                v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
                 v_fold = node.state.pot / subtree_config["average_pot_size"]
                 public_cards_set = set((card.rank, card.suit) for card in node.state.public_cards)
-                for hand in possible_hands:
+                for hand in self.possible_hands:
                     # If a card in the hand is also in the set of public cards, go to the next hand
                     if any((card.rank, card.suit) in public_cards_set for card in hand):
                         continue
                     hand_label = HandLabelGenerator.get_hand_label(hand)
-                    index = hand_label_to_index[hand_label]
+                    index = self.hand_label_to_index[hand_label]
                     # TODO double check that this indexing is correct
                     if loser == "player_one":
                         v1[0, index] = -v_fold
@@ -189,8 +190,8 @@ class Resolver:
             v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
         elif isinstance(node, PlayerNode):
             print("player node:", node.__class__.__name__)
-            v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
-            v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+            v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
+            v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             for child, action in node.children:
                 if node.player == "player_one":
                     updated_range = self.bayesian_range_update(r1, action, node.strategy_matrix, node.action_to_index)
@@ -198,28 +199,60 @@ class Resolver:
                 elif node.player == "player_two":
                     updated_range = self.bayesian_range_update(r2, action, node.strategy_matrix, node.action_to_index)
                     v1_action, v2_action = self.subtree_traversal_rollout(child, r1, updated_range, end_stage, end_depth)
-                for hand in possible_hands:
+                for hand in self.possible_hands:
                     hand_label = HandLabelGenerator.get_hand_label(hand)
-                    index = hand_label_to_index[hand_label]
+                    index = self.hand_label_to_index[hand_label]
                     # TODO double check that this is correct, maybe v1 * v2 instead but not sure
                     v1[0, index] += node.get_action_probability(hand_label=hand_label, action=action) * v1_action[0, index]
                     v2[0, index] += node.get_action_probability(hand_label=hand_label, action=action) * v2_action[0, index]
         else:
             # Entering this block if node is a chance node
             print("chance node:", node.__class__.__name__)
-            v1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
-            v2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+            v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
+            v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             for child, _ in node.children:
                 v1_event, v2_event = self.subtree_traversal_rollout(child, r1, r2, end_stage, end_depth)
                 v1 += v1_event/len(node.children)
                 v2 += v2_event/len(node.children)
+        node.v1 = v1
+        node.v2 = v2
         return v1, v2
+
+    def update_strategy(self, node: Node):
+        for child in node.children:
+            if isinstance(child[0], PlayerNode):
+                self.update_strategy(child[0])
+        if isinstance(node, PlayerNode):
+            all_actions = [child[1] for child in node.children]
+            positive_regret_matrix = np.zeros((len(self.possible_hands), len(all_actions)))
+            for hand in self.possible_hands:
+                for action in all_actions:
+                    child_node = [child[0] for child in node.children if child[1] == action][0]
+                    hand_label = HandLabelGenerator.get_hand_label(hand)
+                    hand_index = node.hand_label_to_index[hand_label]
+                    action_index = node.action_to_index[action]
+                    if node.player == "player_one":
+                        node.cumulative_regrets[hand_index, action_index] += child_node.v1[0, hand_index] - node.v1[0, hand_index]
+                    elif node.player == "player_two":
+                        node.cumulative_regrets[hand_index, action_index] += child_node.v2[0, hand_index] - node.v2[0, hand_index]
+                    positive_regret_matrix[hand_index, action_index] = max(0, node.cumulative_regrets[hand_index, action_index])
+            for hand in self.possible_hands:
+                for action in all_actions:
+                    hand_label = HandLabelGenerator.get_hand_label(hand)
+                    hand_index = node.hand_label_to_index[hand_label]
+                    action_index = node.action_to_index[action]
+                    node.strategy_matrix[hand_index, action_index] = positive_regret_matrix[hand_index, action_index] / np.sum(positive_regret_matrix[hand_index, :])
+        return node.strategy_matrix
 
     def resolve(self, state: PokerState, r1, r2, end_stage, end_depth, T):
         root = self.build_initial_subtree(state, end_stage, end_depth)
 
+        strategy_matrices = []
         for _ in range(T):
             v1, v2 = self.subtree_traversal_rollout(root, r1, r2, end_stage, end_depth)
+            print("value vectors", v1, v2)
+            root_strategy_matrix = self.update_strategy(root)
+            strategy_matrices.append(root_strategy_matrix)
 
     def run_neural_network(self, stage, state, r1, r2):
         return r1, r2

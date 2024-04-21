@@ -12,11 +12,14 @@ class PlayerNode(Node):
         super().__init__(state, parent, stage_depth)
         self.player = player
         self.strategy_matrix: np.ndarray = None
+        self.cumulative_regrets: np.ndarray = None
         self.hand_label_to_index: Dict[str, int] = None
         self.action_to_index: Dict[str, int] = None
         self.index_to_action: List[str] = None
+        self.v1: Optional[np.ndarray] = None
+        self.v2: Optional[np.ndarray] = None
 
-    def init_strategy_matrix(self, deck_size):
+    def init_strategy_and_regret_matrix(self, deck_size):
         # Assuming self.children is available and populated correctly with action tuples
         if not self.children:
             raise ValueError("No children actions found for initializing strategy matrix.")
@@ -36,6 +39,8 @@ class PlayerNode(Node):
 
         # Initialize strategy matrix to uniform probability distribution
         self.strategy_matrix = np.full((len(possible_hands), len(all_actions)), 1/len(all_actions))
+        # Initialize cumulative regrets to zeros
+        self.cumulative_regrets = np.zeros((len(possible_hands), len(all_actions)))
 
     def get_action_probability(self, hand_label: str, action: str) -> float:
         hand_index = self.hand_label_to_index[hand_label]

@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Any, Dict
+from typing import Optional, List, Tuple
 import numpy as np
 
 from games.poker.poker_state import PokerState
@@ -14,7 +14,7 @@ class Node:
         self.children: List[Tuple['Node', str]] = []
         self.utility_matrix: Optional[np.ndarray] = None
 
-    def add_child(self, child_node: 'Node', edge_value: Any):
+    def add_child(self, child_node: 'Node', edge_value: str):
         self.children.append((child_node, edge_value))
 
     def set_utility_matrix(self, matrix: np.ndarray):
