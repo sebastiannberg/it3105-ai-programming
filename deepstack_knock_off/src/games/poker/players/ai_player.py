@@ -65,8 +65,8 @@ class AIPlayer(Player):
         state = self.state_manager.gen_state_from_game(game, player_one_perspective=self)
         # If stage is river, build tree to showdown stage
         if state.stage == "river":
-            self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=3)
+            self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=3, player_hand=self.hand)
         # Else build tree to next stage with depth 1
         else:
             next_stage = self.state_manager.stage_change[state.stage]
-            self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=3)
+            self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=3, player_hand=self.hand)

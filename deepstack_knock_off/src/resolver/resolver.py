@@ -1,12 +1,12 @@
-from typing import Dict
+from typing import Dict, List
 import numpy as np
-import math
 import time
 
 from games.poker.poker_state import PokerState
 from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
 from games.poker.utils.hand_label_generator import HandLabelGenerator
+from games.poker.utils.card import Card
 from resolver.subtree.node import Node
 from resolver.subtree.player_node import PlayerNode
 from resolver.subtree.chance_node import ChanceNode
@@ -23,16 +23,16 @@ class Resolver:
         self.hand_label_to_index = hand_label_to_index
 
     def build_initial_subtree(self, state: PokerState, end_stage: str, end_depth: int):
-        print("Started build_initial_subtree")
         start_time = time.time()
         # Assumes that the root node is a player node and not a chance node or terminal node
         root = PlayerNode(state, "player_one", stage_depth=0)
         queue = [(root, 0)]  # Queue of tuples (node, current_stage_depth)
 
-        i = 0
+        # If root stage is river we have to generate the utility matrix
+        if root.state.stage == "river":
+            root.set_utility_matrix(PokerOracle.gen_utility_matrix(root.state.public_cards, self.state_manager.poker_rules["deck_size"]))
+
         while queue:
-            i+=1
-            print(f"\rNode {i}", end="")
             node, current_stage_depth = queue.pop(0)  # Dequeue the first item
 
             # Stop processing at the end stage and depth for that stage
@@ -84,7 +84,6 @@ class Resolver:
         end_time = time.time()
         duration = end_time - start_time
         duration_minutes = duration / 60
-        print()
         print(f"build_initial_subtree took {duration_minutes:.2f} minutes to run")
         return root
 
@@ -158,15 +157,12 @@ class Resolver:
         return updated_range
 
     def subtree_traversal_rollout(self, node: Node, r1, r2, end_stage, end_depth):
-        # print("range vectors", r1, r2)
         if isinstance(node, TerminalNode):
             if node.state.stage == "showdown":
-                print("showdown")
-                v1 = np.dot(node.utility_matrix, r2.T)
+                v1 = np.dot(node.utility_matrix, r2.T).T
                 v2 = np.dot(-r1, node.utility_matrix)
             else:
                 # A player has folded
-                print("fold node:", node.state.history[-1][2], node.__class__.__name__)
                 loser = node.state.history[-1][1]
                 v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
                 v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
@@ -178,7 +174,6 @@ class Resolver:
                         continue
                     hand_label = HandLabelGenerator.get_hand_label(hand)
                     index = self.hand_label_to_index[hand_label]
-                    # TODO double check that this indexing is correct
                     if loser == "player_one":
                         v1[0, index] = -v_fold
                         v2[0, index] = v_fold
@@ -189,7 +184,6 @@ class Resolver:
             print("Run neural network...")
             v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
         elif isinstance(node, PlayerNode):
-            print("player node:", node.__class__.__name__)
             v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             for child, action in node.children:
@@ -202,12 +196,10 @@ class Resolver:
                 for hand in self.possible_hands:
                     hand_label = HandLabelGenerator.get_hand_label(hand)
                     index = self.hand_label_to_index[hand_label]
-                    # TODO double check that this is correct, maybe v1 * v2 instead but not sure
                     v1[0, index] += node.get_action_probability(hand_label=hand_label, action=action) * v1_action[0, index]
                     v2[0, index] += node.get_action_probability(hand_label=hand_label, action=action) * v2_action[0, index]
         else:
             # Entering this block if node is a chance node
-            print("chance node:", node.__class__.__name__)
             v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             for child, _ in node.children:
@@ -222,9 +214,11 @@ class Resolver:
         for child in node.children:
             if isinstance(child[0], PlayerNode):
                 self.update_strategy(child[0])
+
         if isinstance(node, PlayerNode):
             all_actions = [child[1] for child in node.children]
             positive_regret_matrix = np.zeros((len(self.possible_hands), len(all_actions)))
+
             for hand in self.possible_hands:
                 for action in all_actions:
                     child_node = [child[0] for child in node.children if child[1] == action][0]
@@ -232,27 +226,65 @@ class Resolver:
                     hand_index = node.hand_label_to_index[hand_label]
                     action_index = node.action_to_index[action]
                     if node.player == "player_one":
-                        node.cumulative_regrets[hand_index, action_index] += child_node.v1[0, hand_index] - node.v1[0, hand_index]
-                    elif node.player == "player_two":
-                        node.cumulative_regrets[hand_index, action_index] += child_node.v2[0, hand_index] - node.v2[0, hand_index]
+                        regret = child_node.v1[0, hand_index] - node.v1[0, hand_index]
+                    else:  # player_two
+                        regret = child_node.v2[0, hand_index] - node.v2[0, hand_index]
+                    node.cumulative_regrets[hand_index, action_index] += regret
                     positive_regret_matrix[hand_index, action_index] = max(0, node.cumulative_regrets[hand_index, action_index])
+
             for hand in self.possible_hands:
-                for action in all_actions:
-                    hand_label = HandLabelGenerator.get_hand_label(hand)
-                    hand_index = node.hand_label_to_index[hand_label]
-                    action_index = node.action_to_index[action]
-                    node.strategy_matrix[hand_index, action_index] = positive_regret_matrix[hand_index, action_index] / np.sum(positive_regret_matrix[hand_index, :])
+                hand_label = HandLabelGenerator.get_hand_label(hand)
+                hand_index = node.hand_label_to_index[hand_label]
+                total_positive_regrets = np.sum(positive_regret_matrix[hand_index, :])
+
+                if total_positive_regrets == 0:
+                    # Distribute probabilities equally across all actions since there are no preferred actions
+                    num_actions = len(all_actions)
+                    for action_index in range(num_actions):
+                        node.strategy_matrix[hand_index, action_index] = 1.0 / num_actions
+                else:
+                    for action_index in range(len(all_actions)):
+                        node.strategy_matrix[hand_index, action_index] = positive_regret_matrix[hand_index, action_index] / total_positive_regrets
+
         return node.strategy_matrix
 
-    def resolve(self, state: PokerState, r1, r2, end_stage, end_depth, T):
+    def resolve(self, state: PokerState, r1, r2, end_stage, end_depth, T: int, player_hand: List[Card]):
         root = self.build_initial_subtree(state, end_stage, end_depth)
+        print(self.count_nodes(root))
 
         strategy_matrices = []
+        last_v1 = None
+        last_v2 = None
         for _ in range(T):
             v1, v2 = self.subtree_traversal_rollout(root, r1, r2, end_stage, end_depth)
-            print("value vectors", v1, v2)
             root_strategy_matrix = self.update_strategy(root)
             strategy_matrices.append(root_strategy_matrix)
+
+            # if last_v1 is not None and last_v2 is not None:
+            #     change_v1 = np.linalg.norm(v1 - last_v1)
+            #     change_v2 = np.linalg.norm(v2 - last_v2)
+            #     print(f"Change in v1 = {change_v1}, Change in v2 = {change_v2}")
+            # last_v1, last_v2 = v1, v2
+
+        strategy_matrices_np = np.array(strategy_matrices)
+        # Compute the average across the matrices
+        average_strategy_matrix = np.mean(strategy_matrices_np, axis=0)
+
+        hand_label = HandLabelGenerator.get_hand_label(player_hand)
+        hand_index = self.hand_label_to_index[hand_label]
+        action_probabilities = average_strategy_matrix[hand_index]
+        action_indices = np.arange(len(action_probabilities))
+        chosen_action_index = np.random.choice(action_indices, p=action_probabilities)
+
+        chosen_action_probability = average_strategy_matrix[hand_index, chosen_action_index]
+        chosen_action = root.index_to_action[chosen_action_index]
+        print(chosen_action, chosen_action_probability)
+
+        print(average_strategy_matrix)
+
+        # Update range
+        updated_r1 = self.bayesian_range_update(r1, chosen_action, average_strategy_matrix, root.action_to_index)
+        return chosen_action, updated_r1, v1, v2
 
     def run_neural_network(self, stage, state, r1, r2):
         return r1, r2

@@ -86,7 +86,6 @@ class PokerOracle:
 
     @staticmethod
     def gen_utility_matrix(public_cards: List[Card], deck_size: int):
-        print("\nStarted gen_utility_matrix")
         start_time = time.time()
 
         if len(public_cards) not in (3, 4, 5):
@@ -100,7 +99,6 @@ class PokerOracle:
         utility_matrix = np.zeros((len(possible_hands), len(possible_hands)), dtype=np.int8)
 
         for player_hand_index, player_hand in enumerate(possible_hands):
-            print(f"\rPlayer hand {player_hand_index+1}", end="")
             # If a card in the player's hand is also in the set of public cards, go to the next player hand
             if any((player_card.rank, player_card.suit) in public_cards_set for player_card in player_hand):
                 continue
@@ -126,7 +124,6 @@ class PokerOracle:
         end_time = time.time()
         duration = end_time - start_time
         duration_minutes = duration / 60
-        print()
         print(f"gen_utility_matrix took {duration_minutes:.2f} minutes to run")
 
         return utility_matrix

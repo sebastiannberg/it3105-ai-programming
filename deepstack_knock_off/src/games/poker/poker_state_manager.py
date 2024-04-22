@@ -100,7 +100,6 @@ class PokerStateManager:
                 child_state.player_one_chips += parent_state.pot
             child_state.player_one_bet = 0
             child_state.player_two_bet = 0
-            child_state.pot = 0
             child_state.history.append((parent_state.stage, player, action))
         elif "check" in action:
             child_state.history.append((parent_state.stage, player, action))
