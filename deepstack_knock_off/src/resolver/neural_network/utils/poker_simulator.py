@@ -30,11 +30,10 @@ def generate_river_case():
     pass
 
 
-small_blind_random = random.randint(2, 10)
-big_blind_random = small_blind_random * 2
-scaler = random.randint(2, 10)
-inital_chips_random = scaler * big_blind_random
-max_num_raises_per_stage_random = random.randint(2, 4)
+small_blind_random = 2
+big_blind_random = 4
+inital_chips_random = 1000
+max_num_raises_per_stage_random = 10
 poker_config = {
     "num_ai_players": 1,
     "enable_resolver": False,
@@ -56,21 +55,44 @@ state, player_hand = simulate_poker_game(end_stage="river")
 # Generate random random range vectors
 public_cards_set = set([(card.rank, card.suit) for card in state.public_cards])
 possible_hands, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=poker_rules["deck_size"])
-r1 = np.zeros((1, len(possible_hands)), dtype=np.float64)
-r2 = np.zeros((1, len(possible_hands)), dtype=np.float64)
+# Initialize r1 and r2 with ones
+r1 = np.ones((1, len(possible_hands)), dtype=np.float64)
+r2 = np.ones((1, len(possible_hands)), dtype=np.float64)
+
 for hand in possible_hands:
     hand_label = HandLabelGenerator.get_hand_label(hand)
     hand_index = hand_label_to_index[hand_label]
-    # If a card in the hand is also in the set of public cards, go to the next hand
+    # If a card in the hand is also in the set of public cards, set the corresponding entries to 0
     if any((card.rank, card.suit) in public_cards_set for card in hand):
-        continue
-    r1[0, hand_index] = random.random()
-    r2[0, hand_index] = random.random()
-# Normalize r1 and r2
+        r1[0, hand_index] = 0
+        r2[0, hand_index] = 0
+
+# Normalize r1 and r2 to ensure they sum to 1, except for indices that should remain 0
 if r1.sum() > 0:
     r1 /= r1.sum()
 if r2.sum() > 0:
     r2 /= r2.sum()
+
 print(state)
 print(player_hand)
-_, _, v1, v2 = resolver.resolve(state, r1, r2, end_stage="showdown", end_depth=0, T=20, player_hand=player_hand)
+_, _, v1, v2, strategy_matrix = resolver.resolve(state, r1, r2, end_stage="showdown", end_depth=0, T=2, player_hand=player_hand)
+
+for hand in possible_hands:
+    hand_label = HandLabelGenerator.get_hand_label(hand)
+    hand_index = hand_label_to_index[hand_label]
+    row = strategy_matrix[hand_index, :]
+    if 1.0 in row:
+        print(hand, row)
+
+print()
+top_values = []
+for hand in possible_hands:
+    hand_label = HandLabelGenerator.get_hand_label(hand)
+    hand_index = hand_label_to_index[hand_label]
+    top_values.append((hand, r2[0, hand_index]))
+# Sort the list of tuples by the second item (value from r2) in descending order
+top_values.sort(key=lambda x: x[1], reverse=True)
+for hand, value in top_values[:10]:
+    print(hand, value)
+
+print(strategy_matrix)

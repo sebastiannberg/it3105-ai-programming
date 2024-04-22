@@ -255,29 +255,18 @@ for player_hand, opponent_hand in tie_tests:
     assert result == "tie", f"Expected 'tie' but was '{result}' in test with player hand type {[(player_hand.category, player_hand.primary_value, player_hand.kickers)]} and opponent hand type {[(opponent_hand.category, opponent_hand.primary_value, opponent_hand.kickers)]}"
 
 # Test Utility Matrix
-public_cards = [Card("J", "hearts"), Card("J", "spades"), Card("A", "clubs")]
-utility_matrix, hand_label_to_index = oracle.gen_utility_matrix(public_cards)
+_, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=24)
+public_cards = [Card("J", "hearts"), Card("J", "spades"), Card("A", "clubs"), Card("K", "clubs"), Card("9", "diamonds")]
+utility_matrix = oracle.gen_utility_matrix(public_cards, deck_size=24)
 
-player_hand = [Card("J", "diamonds"), Card("3", "spades")]
+player_hand = [Card("J", "diamonds"), Card("J", "clubs")]
 player_hand_label = HandLabelGenerator.get_hand_label(player_hand)
-opponent_hand = [Card("2", "hearts"), Card("3", "spades")]
-opponent_hand_label = HandLabelGenerator.get_hand_label(opponent_hand)
-assert utility_matrix[hand_label_to_index[player_hand_label], hand_label_to_index[opponent_hand_label]] == 0
-
-player_hand = [Card("J", "diamonds"), Card("3", "spades")]
-player_hand_label = HandLabelGenerator.get_hand_label(player_hand)
-opponent_hand = [Card("2", "hearts"), Card("8", "diamonds")]
+opponent_hand = [Card("9", "hearts"), Card("10", "spades")]
 opponent_hand_label = HandLabelGenerator.get_hand_label(opponent_hand)
 assert utility_matrix[hand_label_to_index[player_hand_label], hand_label_to_index[opponent_hand_label]] == 1
 
-player_hand = [Card("A", "diamonds"), Card("7", "hearts")]
+player_hand = [Card("10", "diamonds"), Card("10", "clubs")]
 player_hand_label = HandLabelGenerator.get_hand_label(player_hand)
-opponent_hand = [Card("J", "clubs"), Card("8", "diamonds")]
+opponent_hand = [Card("K", "hearts"), Card("K", "spades")]
 opponent_hand_label = HandLabelGenerator.get_hand_label(opponent_hand)
 assert utility_matrix[hand_label_to_index[player_hand_label], hand_label_to_index[opponent_hand_label]] == -1
-
-# Test Rollouts
-player_hand = [Card("2", "hearts"), Card("3", "spades")]
-public_cards = []
-result = oracle.perform_rollouts(player_hand, public_cards)
-print(result)

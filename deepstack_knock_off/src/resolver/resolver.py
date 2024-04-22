@@ -153,33 +153,26 @@ class Resolver:
             prob_action = np.sum(strategy_matrix[:, action_to_index[action]]) / np.sum(strategy_matrix)
             updated_range_value = (prob_action_hand * prob_hand) / prob_action
             updated_range[0, self.hand_label_to_index[hand_label]] = updated_range_value
-        # TODO with numpy
         return updated_range
 
     def subtree_traversal_rollout(self, node: Node, r1, r2, end_stage, end_depth):
         if isinstance(node, TerminalNode):
+            print(r1)
+            print(r2)
             if node.state.stage == "showdown":
                 v1 = np.dot(node.utility_matrix, r2.T).T
                 v2 = np.dot(-r1, node.utility_matrix)
             else:
                 # A player has folded
                 loser = node.state.history[-1][1]
-                v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
-                v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
-                v_fold = node.state.pot / subtree_config["average_pot_size"]
-                public_cards_set = set((card.rank, card.suit) for card in node.state.public_cards)
-                for hand in self.possible_hands:
-                    # If a card in the hand is also in the set of public cards, go to the next hand
-                    if any((card.rank, card.suit) in public_cards_set for card in hand):
-                        continue
-                    hand_label = HandLabelGenerator.get_hand_label(hand)
-                    index = self.hand_label_to_index[hand_label]
-                    if loser == "player_one":
-                        v1[0, index] = -v_fold
-                        v2[0, index] = v_fold
-                    elif loser == "player_two":
-                        v1[0, index] = v_fold
-                        v2[0, index] = -v_fold
+                if loser == "player_one":
+                    negative_utility_matrix = -np.abs(node.utility_matrix)
+                    v1 = np.dot(negative_utility_matrix, r2.T).T
+                    v2 = np.dot(-r1, negative_utility_matrix)
+                if loser == "player_two":
+                    positive_utility_matrix = np.abs(node.utility_matrix)
+                    v1 = np.dot(positive_utility_matrix, r2.T).T
+                    v2 = np.dot(-r1, positive_utility_matrix)
         elif node.state.stage == end_stage and node.stage_depth == end_depth:
             print("Run neural network...")
             v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
@@ -253,18 +246,10 @@ class Resolver:
         print(self.count_nodes(root))
 
         strategy_matrices = []
-        last_v1 = None
-        last_v2 = None
         for _ in range(T):
             v1, v2 = self.subtree_traversal_rollout(root, r1, r2, end_stage, end_depth)
             root_strategy_matrix = self.update_strategy(root)
             strategy_matrices.append(root_strategy_matrix)
-
-            # if last_v1 is not None and last_v2 is not None:
-            #     change_v1 = np.linalg.norm(v1 - last_v1)
-            #     change_v2 = np.linalg.norm(v2 - last_v2)
-            #     print(f"Change in v1 = {change_v1}, Change in v2 = {change_v2}")
-            # last_v1, last_v2 = v1, v2
 
         strategy_matrices_np = np.array(strategy_matrices)
         # Compute the average across the matrices
@@ -280,11 +265,11 @@ class Resolver:
         chosen_action = root.index_to_action[chosen_action_index]
         print(chosen_action, chosen_action_probability)
 
-        print(average_strategy_matrix)
+        # print(average_strategy_matrix)
 
         # Update range
         updated_r1 = self.bayesian_range_update(r1, chosen_action, average_strategy_matrix, root.action_to_index)
-        return chosen_action, updated_r1, v1, v2
+        return chosen_action, updated_r1, v1, v2, average_strategy_matrix
 
     def run_neural_network(self, stage, state, r1, r2):
         return r1, r2
