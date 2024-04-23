@@ -19,4 +19,4 @@ class Card:
         return f"Card('{self.rank}', '{self.suit}')"
 
     def __str__(self):
-        return f"{self.rank} of {self.suit}"
+        return f"{self.rank}{self.suit}"

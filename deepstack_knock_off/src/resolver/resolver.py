@@ -157,8 +157,6 @@ class Resolver:
 
     def subtree_traversal_rollout(self, node: Node, r1, r2, end_stage, end_depth):
         if isinstance(node, TerminalNode):
-            print(r1)
-            print(r2)
             if node.state.stage == "showdown":
                 v1 = np.dot(node.utility_matrix, r2.T).T
                 v2 = np.dot(-r1, node.utility_matrix)
@@ -243,7 +241,6 @@ class Resolver:
 
     def resolve(self, state: PokerState, r1, r2, end_stage, end_depth, T: int, player_hand: List[Card]):
         root = self.build_initial_subtree(state, end_stage, end_depth)
-        print(self.count_nodes(root))
 
         strategy_matrices = []
         for _ in range(T):
@@ -265,11 +262,9 @@ class Resolver:
         chosen_action = root.index_to_action[chosen_action_index]
         print(chosen_action, chosen_action_probability)
 
-        # print(average_strategy_matrix)
-
         # Update range
         updated_r1 = self.bayesian_range_update(r1, chosen_action, average_strategy_matrix, root.action_to_index)
-        return chosen_action, updated_r1, v1, v2, average_strategy_matrix
+        return chosen_action, updated_r1, v1, v2
 
     def run_neural_network(self, stage, state, r1, r2):
         return r1, r2
