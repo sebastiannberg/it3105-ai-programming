@@ -84,7 +84,7 @@ def generate_river_cases(num_cases: int):
     filename = f"river_cases_{date_str}.csv"
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
-    output_file = os.path.join(parent_dir, "data", filename)
+    output_file = os.path.join(parent_dir, "data", "raw", filename)
 
     # Check if the file exists and create it with headers if it does not
     try:
