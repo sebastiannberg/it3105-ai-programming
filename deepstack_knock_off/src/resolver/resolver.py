@@ -7,6 +7,7 @@ from games.poker.poker_state_manager import PokerStateManager
 from games.poker.poker_oracle import PokerOracle
 from games.poker.utils.hand_label_generator import HandLabelGenerator
 from games.poker.utils.card import Card
+from resolver.neural_network.predictor import Predictor
 from resolver.subtree.node import Node
 from resolver.subtree.player_node import PlayerNode
 from resolver.subtree.chance_node import ChanceNode
@@ -21,6 +22,7 @@ class Resolver:
         possible_hands, hand_label_to_index, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
         self.possible_hands = possible_hands
         self.hand_label_to_index = hand_label_to_index
+        self.predictor = Predictor()
 
     def build_initial_subtree(self, state: PokerState, end_stage: str, end_depth: int):
         start_time = time.time()
@@ -28,8 +30,8 @@ class Resolver:
         root = PlayerNode(state, "player_one", stage_depth=0)
         queue = [(root, 0)]  # Queue of tuples (node, current_stage_depth)
 
-        # If root stage is river we have to generate the utility matrix
-        if root.state.stage == "river":
+        # If root stage is not preflop we have to generate the utility matrix for root
+        if root.state.stage != "preflop":
             root.set_utility_matrix(PokerOracle.gen_utility_matrix(root.state.public_cards, self.state_manager.poker_rules["deck_size"]))
 
         while queue:
@@ -172,7 +174,6 @@ class Resolver:
                     v1 = np.dot(positive_utility_matrix, r2.T).T
                     v2 = np.dot(-r1, positive_utility_matrix)
         elif node.state.stage == end_stage and node.stage_depth == end_depth:
-            print("Run neural network...")
             v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
         elif isinstance(node, PlayerNode):
             v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
@@ -266,5 +267,13 @@ class Resolver:
         updated_r1 = self.bayesian_range_update(r1, chosen_action, average_strategy_matrix, root.action_to_index)
         return chosen_action, updated_r1, v1, v2
 
-    def run_neural_network(self, stage, state, r1, r2):
-        return r1, r2
+    def run_neural_network(self, stage, state: PokerState, r1, r2):
+        public_cards = [str(card) for card in state.public_cards]
+
+        predicted_v1, predicted_v2 = self.predictor.make_prediction(stage, r1, r2, public_cards, state.pot)
+
+        # Element-wise multiplication to zero out indices where range vectors are zero
+        predicted_v1 = predicted_v1 * (r1 != 0)
+        predicted_v2 = predicted_v2 * (r2 != 0)
+
+        return predicted_v1, predicted_v2

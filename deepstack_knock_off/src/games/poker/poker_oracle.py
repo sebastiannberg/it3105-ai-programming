@@ -217,9 +217,18 @@ class PokerOracle:
             # Sort pairs to have the highest pair values first
             pairs.sort(reverse=True)
             highest_pair, second_highest_pair = pairs[:2]
-            kickers = sorted([value for value in card_values if value not in pairs], reverse=True)[:1]
-            # Consider the highest pair as the primary value and second highest in the kickers
+            # Exclude all cards that are part of any pair for kicker consideration
+            kicker_candidates = [value for value in card_values if value not in pairs]
+            # Sort remaining values to find the highest for the kicker
+            kicker_candidates.sort(reverse=True)
+            kickers = kicker_candidates[:1]  # There should always be at least one kicker if there are additional cards
+
+            if not kickers:  # Safety check to ensure there is always a kicker
+                kickers = [min(card_values)]  # Use the lowest card value as a fallback kicker
+
+            # Return highest pair as primary value, second highest in kickers along with the top kicker
             return True, highest_pair, [second_highest_pair] + kickers
+
         return False, 0, []
 
     @staticmethod
@@ -363,7 +372,7 @@ class PokerOracle:
             else:
                 # Ensure both hands have the same number of kickers before comparing
                 if len(player_hand.kickers) != len(opponent_hand.kickers):
-                    raise ValueError("Kicker lists are not of the same size.")
+                    raise ValueError(f"Kicker lists are not of the same size. {player_hand.category}, {opponent_hand.category}, {player_hand.kickers}, {opponent_hand.kickers}")
 
                 # Kickers decide outcome
                 # Compare kickers sequentially from highest to lowest
