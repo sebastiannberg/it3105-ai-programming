@@ -10,8 +10,9 @@ from sklearn.model_selection import train_test_split
 
 class PokerDataset(Dataset):
 
-    def __init__(self, csv_filename: str, mode: str, param_file: str = None):
+    def __init__(self, stage: str, csv_filename: str, mode: str, param_file: str = None):
         super().__init__()
+        self.stage = stage
         self.current_dir = os.path.dirname(__file__)
         self.dataset_path = os.path.join(self.current_dir, "raw", csv_filename)
         self.mode = mode
@@ -91,7 +92,7 @@ class PokerDataset(Dataset):
         }
 
         # Save parameters to a file
-        param_file = os.path.join(self.current_dir, "normalization_params.json")
+        param_file = os.path.join(self.current_dir, f"{self.stage}_normalization_params.json")
         with open(param_file, 'w') as f:
             json.dump(self.params, f)
 

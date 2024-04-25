@@ -22,12 +22,12 @@ def train():
     WEIGHT_DECAY = 0.00001
     BATCH_SIZE = 16
     CSV_FILENAME = "river_cases_2024-04-22_19-45-01.csv"
-    NORMALIZATION_PARAMS_PATH = os.path.join(os.path.dirname(__file__), "data", "normalization_params.json")
+    NORMALIZATION_PARAMS_PATH = os.path.join(os.path.dirname(__file__), "data", "river_normalization_params.json")
     SAVED_MODELS_PATH = os.path.join(os.path.dirname(__file__), "saved_models")
 
     print("Creating datasets")
-    train_dataset = PokerDataset(csv_filename=CSV_FILENAME, mode="train", param_file=NORMALIZATION_PARAMS_PATH)
-    validation_dataset = PokerDataset(csv_filename=CSV_FILENAME, mode="validation", param_file=NORMALIZATION_PARAMS_PATH)
+    train_dataset = PokerDataset(stage= "river", csv_filename=CSV_FILENAME, mode="train", param_file=NORMALIZATION_PARAMS_PATH)
+    validation_dataset = PokerDataset(stage="river", csv_filename=CSV_FILENAME, mode="validation", param_file=NORMALIZATION_PARAMS_PATH)
     print(f"Train dataset created with {len(train_dataset)} samples")
     print(f"Validation dataset created with {len(validation_dataset)} samples")
 
@@ -100,11 +100,11 @@ def test(model_filename: str):
     print("\033[1;32m" + "="*15 + " Testing " + "="*15 + "\033[0m")
     LOSS_FUNCTION = nn.MSELoss()
     CSV_FILENAME = "river_cases_2024-04-22_19-45-01.csv"
-    NORMALIZATION_PARAMS_PATH = os.path.join(os.path.dirname(__file__), "data", "normalization_params.json")
+    NORMALIZATION_PARAMS_PATH = os.path.join(os.path.dirname(__file__), "data", "river_normalization_params.json")
     SAVED_MODELS_PATH = os.path.join(os.path.dirname(__file__), "saved_models")
 
     print("Creating dataset")
-    test_dataset = PokerDataset(csv_filename=CSV_FILENAME, mode="test", param_file=NORMALIZATION_PARAMS_PATH)
+    test_dataset = PokerDataset(stage="river", csv_filename=CSV_FILENAME, mode="test", param_file=NORMALIZATION_PARAMS_PATH)
     print(f"Test dataset created with {len(test_dataset)} samples")
 
     print("Creating data loaders")

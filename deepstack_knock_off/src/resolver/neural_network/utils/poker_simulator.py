@@ -218,4 +218,4 @@ def generate_turn_cases(num_cases: int):
     duration_minutes = duration / 60
     print(f"Generating data took {duration_minutes:.2f} minutes to run")
 
-generate_turn_cases(num_cases=100)
+generate_turn_cases(num_cases=5000)

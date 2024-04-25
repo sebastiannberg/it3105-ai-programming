@@ -12,11 +12,19 @@ class Predictor:
     def __init__(self):
         self.saved_models_path = os.path.join(os.path.dirname(__file__), "saved_models")
         self.river_model = "24-04-2024_19-53-45_epoch_125.pt"
-        self.normalization_params = os.path.join(os.path.dirname(__file__), "data", "normalization_params.json")
-        with open(self.normalization_params, 'r') as f:
-            self.params = json.load(f)
 
     def make_prediction(self, stage, r1, r2, public_cards, pot):
+        if stage == "river":
+            model_path = os.path.join(self.saved_models_path, "river", self.river_model)
+            model = RiverNetwork()
+            model.load_state_dict(torch.load(model_path))
+            model.eval()
+            normalization_params = os.path.join(os.path.dirname(__file__), "data", f"{stage}_normalization_params.json")
+            with open(normalization_params, 'r') as f:
+                params = json.load(f)
+        else:
+            raise ValueError("{stage} not recognized.")
+
         # One hot encoding for public cards
         public_cards_one_hot = np.zeros(24, dtype=np.int8)
         for card in public_cards:
@@ -25,21 +33,13 @@ class Predictor:
 
         # Normalize pot
         pot = np.array([pot], dtype=np.float64)
-        pot = (pot - self.params["pot_mean"]) / self.params["pot_std"]
+        pot = (pot - params["pot_mean"]) / params["pot_std"]
 
         # Create tensors for r1, r2, public cards, pot
         r1_tensor = torch.from_numpy(r1).float()
         r2_tensor = torch.from_numpy(r2).float()
         public_cards_tensor = torch.from_numpy(public_cards_one_hot).float().unsqueeze(0)
         pot_tensor = torch.from_numpy(pot).float().unsqueeze(0)
-
-        if stage == "river":
-            model_path = os.path.join(self.saved_models_path, "river", self.river_model)
-            model = RiverNetwork()
-            model.load_state_dict(torch.load(model_path))
-            model.eval()
-        else:
-            raise ValueError("{stage} not recognized.")
 
         with torch.no_grad():
             predicted_v1, predicted_v2, _ = model(r1_tensor, r2_tensor, public_cards_tensor, pot_tensor)
