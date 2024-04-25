@@ -10,6 +10,7 @@ class TurnNetwork(nn.Module):
         self.hidden_layer_module = nn.Sequential(
             nn.Linear(in_features=577, out_features=600),
             nn.ReLU(),
+            nn.Dropout(p=0.6),
             nn.Linear(in_features=600, out_features=600),
             nn.ReLU(),
             nn.Linear(in_features=600, out_features=552)
