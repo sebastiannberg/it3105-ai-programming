@@ -8,12 +8,11 @@ class TurnNetwork(nn.Module):
         super().__init__()
 
         self.hidden_layer_module = nn.Sequential(
-            nn.Linear(in_features=577, out_features=1154),
+            nn.Linear(in_features=577, out_features=600),
             nn.ReLU(),
-            nn.Dropout(p=0.7),
-            nn.Linear(in_features=1154, out_features=800),
+            nn.Linear(in_features=600, out_features=600),
             nn.ReLU(),
-            nn.Linear(in_features=800, out_features=552)
+            nn.Linear(in_features=600, out_features=552)
         )
 
     def forward(self, r1, r2, public_cards, pot):

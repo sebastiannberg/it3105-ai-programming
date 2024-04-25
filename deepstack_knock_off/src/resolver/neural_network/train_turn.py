@@ -19,7 +19,7 @@ def train():
     NUM_EPOCHS = 150
     LOSS_FUNCTION = nn.MSELoss()
     LR = 0.001
-    WEIGHT_DECAY = 0.00001
+    #WEIGHT_DECAY = 0.00001
     BATCH_SIZE = 16
     CSV_FILENAME = "turn_cases_2024-04-24_21-53-46.csv"
     NORMALIZATION_PARAMS_PATH = os.path.join(os.path.dirname(__file__), "data", "turn_normalization_params.json")
@@ -36,7 +36,7 @@ def train():
     validation_data_loader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     model = TurnNetwork()
-    optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+    optimizer = optim.Adam(model.parameters(), lr=LR)
     criterion = CustomLoss(loss_function=LOSS_FUNCTION)
     print(f"Model: {model.__class__.__name__}")
     print(f"Optimizer: {optimizer.__class__.__name__}")
@@ -127,15 +127,15 @@ def test(model_filename: str):
             comparing.append((v1.numpy(), predicted_v1.numpy()))
             loss = criterion(predicted_v1, predicted_v2, v1, v2, utility_sum)
             running_test_loss.append(loss.item())
+            #print(utility_sum)
 
     average_test_loss = sum(running_test_loss) / len(running_test_loss)
     print(f"Average Test Loss: {average_test_loss}")
 
-    # print(utility_sum)
-    # for v1, predicted_v1 in comparing:
-    #     for i in range(32):
-    #         for j in range(276):
-    #             print(v1[i, j], "|", predicted_v1[i, j])
+    for v1, predicted_v1 in comparing:
+        for i in range(32):
+            for j in range(276):
+                print(v1[i, j], "|", predicted_v1[i, j])
 
 train()
-# test("24-04-2024_19-53-45_epoch_125.pt")
+#test("25-04-2024_15-18-22_epoch_55.pt")
