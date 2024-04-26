@@ -159,9 +159,11 @@ class PokerStateManager:
         return child_state
 
     def gen_chance_child_states(self, parent_state: PokerState, max_num_children: Optional[int] = None) -> List[PokerState]:
+        # Create a set for easy comparison
         public_cards_set = set((card.rank, card.suit) for card in parent_state.public_cards)
 
         deck = PokerOracle.gen_deck(num_cards=self.poker_rules["deck_size"], shuffled=True)
+        # Filter out cards from public cards so that they do not appear in the deck
         deck = [card for card in deck.cards if (card.rank, card.suit) not in public_cards_set]
 
         if parent_state.stage == "flop":
@@ -171,6 +173,7 @@ class PokerStateManager:
         else:
             raise ValueError(f"Unexpected chance node appearing in wrong stage {parent_state.stage}")
 
+        # max_num_children is optional, check if it is set
         if max_num_children and len(possible_dealings) >= max_num_children:
             samples = random.sample(possible_dealings, k=max_num_children)
         else:
