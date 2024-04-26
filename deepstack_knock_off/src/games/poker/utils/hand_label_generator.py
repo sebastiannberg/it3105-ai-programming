@@ -1,5 +1,4 @@
-from typing import List, Dict
-import itertools
+from typing import List
 
 from games.poker.utils.card import Card
 

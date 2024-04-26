@@ -210,14 +210,13 @@ class PokerGameManager:
         if not current_small_blind_player or not current_big_blind_player:
             raise ValueError("Either small blind or big blind is not assigned to a player")
         # Small blind action
-        raise_amount = (current_small_blind_player.player_bet + self.poker_config["small_blind_amount"]) - self.game.current_bet
         small_blind_action = RaiseBet(player=current_small_blind_player,
                                       chip_cost=self.poker_config["small_blind_amount"],
-                                      raise_amount=raise_amount,
+                                      raise_amount=self.poker_config["small_blind_amount"],
                                       raise_type="small_blind")
         small_blind_action.apply(self.game)
         # Big blind action
-        raise_amount = (current_big_blind_player.player_bet + self.poker_config["big_blind_amount"]) - self.game.current_bet
+        raise_amount = self.poker_config["big_blind_amount"] - self.poker_config["small_blind_amount"]
         big_blind_action = RaiseBet(player=current_big_blind_player,
                                     chip_cost=self.poker_config["big_blind_amount"],
                                     raise_amount=raise_amount,
