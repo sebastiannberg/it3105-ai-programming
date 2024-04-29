@@ -33,8 +33,7 @@ class PokerGameManager:
             stage="preflop",
             history=[],
             pot=0,
-            current_bet=0,
-            ai_strategy=None
+            current_bet=0
         )
 
     def start_game(self) -> None:
@@ -133,19 +132,31 @@ class PokerGameManager:
         else:
             self.assign_next_player()
 
-    def get_ai_decision(self) -> Dict:
+    def get_ai_method(self):
+        if not isinstance(self.game.current_player, AIPlayer):
+            return None
+
+        if not self.poker_config["enable_resolver"]:
+            return {"ai_method": "rollout"}
+
+        if random.random() < self.poker_config["prob_resolver"]:
+            return {"ai_method": "resolver"}
+
+        return {"ai_method": "rollout"}
+
+    def get_ai_decision(self, ai_method: str) -> Dict:
         if not isinstance(self.game.current_player, AIPlayer):
             return None
 
         self.assign_legal_actions_to_player(self.game.current_player.name)
 
-        if self.poker_config["enable_resolver"]:
-            if random.random() < self.poker_config["prob_resolver"]:
-                selected_action = self.game.current_player.make_decision_resolving()
-            else:
-                selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, self.poker_rules["deck_size"], len(self.game.round_players)-1)
-        else:
+        if ai_method == "rollout":
             selected_action = self.game.current_player.make_decision_rollouts(self.game.public_cards, self.poker_rules["deck_size"], len(self.game.round_players)-1)
+        elif ai_method == "resolver":
+            selected_action = self.game.current_player.make_decision_resolving(self.game)
+        else:
+            raise ValueError(f"AI method {ai_method} not supported.")
+
         return selected_action.to_dict()
 
     def gen_poker_players(self, num_ai_players: int, num_human_players: int) -> List[Player]:
@@ -380,7 +391,8 @@ class PokerGameManager:
         self.game.current_bet = 0
         self.game.public_cards = []
         self.game.stage = "preflop"
-        self.deck = PokerOracle.gen_deck(num_cards=52, shuffled=True)
+        self.game.deck = PokerOracle.gen_deck(num_cards=self.poker_rules["deck_size"], shuffled=True)
+        self.game.history = []
         # Start a new round
         self.assign_blind_roles()
         self.perform_blind_bets()
@@ -412,6 +424,5 @@ class PokerGameManager:
             "public_cards": [{"rank": card.rank, "suit": card.suit} for card in self.game.public_cards],
             "stage": self.game.stage,
             "pot": self.game.pot,
-            "current_bet": self.game.current_bet,
-            "ai_strategy": self.game.ai_strategy
+            "current_bet": self.game.current_bet
         }

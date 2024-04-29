@@ -65,8 +65,21 @@ class AIPlayer(Player):
         state = self.state_manager.gen_state_from_game(game, player_one_perspective=self)
         # If stage is river, build tree to showdown stage
         if state.stage == "river":
-            self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=3, player_hand=self.hand)
+            chosen_action, updated_r1, _, _ = self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=3, player_hand=self.hand)
         # Else build tree to next stage with depth 1
         else:
             next_stage = self.state_manager.stage_change[state.stage]
-            self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=3, player_hand=self.hand)
+            chosen_action, updated_r1, _, _ = self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=3, player_hand=self.hand)
+        self.r1 = updated_r1
+
+        action = chosen_action.lower()  # Convert to lowercase to ensure consistency in comparison
+        if "fold" in chosen_action.lower():
+            return next((a for a in self.legal_actions if isinstance(a, Fold)), None)
+        if "check" in chosen_action.lower():
+            return next((a for a in self.legal_actions if isinstance(a, Check)), None)
+        if "call" in chosen_action.lower():
+            return next((a for a in self.legal_actions if isinstance(a, RaiseBet) and getattr(a, "raise_type", None) == "call"), None)
+        if "raise" in chosen_action.lower():
+            # Assuming the raise amount is the last element in the action string
+            raise_amount = int(action.split()[-1])
+            return next((a for a in self.legal_actions if isinstance(a, RaiseBet) and a.raise_amount == raise_amount), None)

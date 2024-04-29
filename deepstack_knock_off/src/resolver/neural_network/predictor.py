@@ -4,6 +4,7 @@ import os
 import json
 import re
 
+from resolver.neural_network.models.flop_network import FlopNetwork
 from resolver.neural_network.models.turn_network import TurnNetwork
 from resolver.neural_network.models.river_network import RiverNetwork
 
@@ -12,6 +13,7 @@ class Predictor:
 
     def __init__(self):
         self.saved_models_path = os.path.join(os.path.dirname(__file__), "saved_models")
+        self.flop_model = "26-04-2024_13-58-54_epoch_75.pt"
         self.turn_model = "25-04-2024_16-28-13_epoch_180.pt"
         self.river_model = "24-04-2024_19-53-45_epoch_125.pt"
 
@@ -27,6 +29,14 @@ class Predictor:
         elif stage == "turn":
             model_path = os.path.join(self.saved_models_path, "turn", self.turn_model)
             model = TurnNetwork()
+            model.load_state_dict(torch.load(model_path))
+            model.eval()
+            normalization_params = os.path.join(os.path.dirname(__file__), "data", f"{stage}_normalization_params.json")
+            with open(normalization_params, 'r') as f:
+                params = json.load(f)
+        elif stage == "flop":
+            model_path = os.path.join(self.saved_models_path, "flop", self.flop_model)
+            model = FlopNetwork()
             model.load_state_dict(torch.load(model_path))
             model.eval()
             normalization_params = os.path.join(os.path.dirname(__file__), "data", f"{stage}_normalization_params.json")

@@ -8,6 +8,7 @@ const BoardPage = () => {
   const [gameState, setGameState] = useState(null);
   const [winner, setWinner] = useState(null);
   const [roundWinners, setRoundWinners] = useState([]);
+  const [aiMethod, setAiMethod] = useState(null);
   const [aiDecision, setAiDecision] = useState(null);
 
   const fetchGameState = async () => {
@@ -79,7 +80,7 @@ const BoardPage = () => {
         {
           (winner || roundWinners.length > 0) ? <p>&nbsp;</p> :
           (gameState?.current_player && gameState.current_player.name.includes("AI")) ?
-            (aiDecision && aiDecision.action_name ? <p>AI choose to <strong>{aiDecision.action_name}</strong></p> : <p>AI calculating decision...</p>)
+            (aiDecision && aiDecision.action_name ? <p>AI chose to <strong>{aiDecision.action_name}</strong> using <strong>{aiMethod}</strong></p> : <p>AI calculating decision using <strong>{aiMethod}</strong>...</p>)
             : <p>&nbsp;</p>
         }
         <GameBoard gameState={gameState} />
@@ -93,7 +94,7 @@ const BoardPage = () => {
       </div>
       <div className='action-section'>
         <h1>Actions</h1>
-        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinners={setRoundWinners} onAiDecision={setAiDecision} winner={winner} roundWinners={roundWinners} aiDecision={aiDecision} />
+        <ActionPane gameState={gameState} fetchGameState={fetchGameState} onWinnerDetermined={setWinner} onRoundWinners={setRoundWinners} onAiDecision={setAiDecision} setAiMethod={setAiMethod} winner={winner} roundWinners={roundWinners} aiDecision={aiDecision} />
       </div>
     </div>
   );

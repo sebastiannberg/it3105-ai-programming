@@ -79,7 +79,6 @@ def apply_action():
         serialized_game_manager = cache.get("game_manager")
         game_manager = pickle.loads(serialized_game_manager)
 
-        print(game_manager.state_manager.gen_state_from_game(game_manager.game, game_manager.game.current_player))
         result = game_manager.apply_action(data["player"], data["name"])
 
         cache.set("game_manager", pickle.dumps(game_manager))
@@ -105,23 +104,40 @@ def next_round():
 
 @app.route("/ai-method", methods=["GET"])
 def ai_method():
-    # TODO return ai method "rollout" or "resolve" based on probability in gamemanger config
-    pass
-
-@app.route("/ai-decision", methods=["GET"])
-def ai_decision():
     try:
         serialized_game_manager = cache.get("game_manager")
         game_manager = pickle.loads(serialized_game_manager)
 
-        ai_action = game_manager.get_ai_decision()
+        ai_method = game_manager.get_ai_method()
+
+        cache.set("game_manager", pickle.dumps(game_manager))
+        if ai_method:
+            return jsonify(ai_method), 200
+        else:
+            raise ValueError("It is not AI's turn")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/ai-decision", methods=["GET"])
+def ai_decision():
+    try:
+        # Retrieve the AI method from query parameters
+        ai_method = request.args.get("method", default=None, type=str)
+        print(ai_method)
+        if ai_method not in ["rollout", "resolver"]:
+            return jsonify({"error": "Invalid AI method. Choose 'rollout' or 'resolver'."}), 400
+
+        serialized_game_manager = cache.get("game_manager")
+        game_manager = pickle.loads(serialized_game_manager)
+
+        ai_action = game_manager.get_ai_decision(ai_method)
         print(ai_action)
 
         cache.set("game_manager", pickle.dumps(game_manager))
         if ai_action:
             return jsonify(ai_action), 200
         else:
-            raise ValueError("It is not AI's turn")
+            return jsonify({"message": "AI decision could not be made"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

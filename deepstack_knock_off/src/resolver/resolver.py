@@ -165,14 +165,22 @@ class Resolver:
             else:
                 # A player has folded
                 loser = node.state.history[-1][1]
-                if loser == "player_one":
-                    negative_utility_matrix = -np.abs(node.utility_matrix)
-                    v1 = np.dot(negative_utility_matrix, r2.T).T
-                    v2 = np.dot(-r1, negative_utility_matrix)
-                if loser == "player_two":
-                    positive_utility_matrix = np.abs(node.utility_matrix)
-                    v1 = np.dot(positive_utility_matrix, r2.T).T
-                    v2 = np.dot(-r1, positive_utility_matrix)
+                if node.state.stage == "preflop":
+                    if loser == "player_one":
+                        v1 = np.full((1, len(self.possible_hands)), -0.5)
+                        v2 = np.full((1, len(self.possible_hands)), 0.5)
+                    elif loser == "player_two":
+                        v1 = np.full((1, len(self.possible_hands)), 0.5)
+                        v2 = np.full((1, len(self.possible_hands)), -0.5)
+                else:
+                    if loser == "player_one":
+                        negative_utility_matrix = -np.abs(node.utility_matrix)
+                        v1 = np.dot(negative_utility_matrix, r2.T).T
+                        v2 = np.dot(-r1, negative_utility_matrix)
+                    if loser == "player_two":
+                        positive_utility_matrix = np.abs(node.utility_matrix)
+                        v1 = np.dot(positive_utility_matrix, r2.T).T
+                        v2 = np.dot(-r1, positive_utility_matrix)
         elif node.state.stage == end_stage and node.stage_depth == end_depth:
             v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
         elif isinstance(node, PlayerNode):
@@ -180,11 +188,17 @@ class Resolver:
             v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             for child, action in node.children:
                 if node.player == "player_one":
-                    updated_range = self.bayesian_range_update(r1, action, node.strategy_matrix, node.action_to_index)
-                    v1_action, v2_action = self.subtree_traversal_rollout(child, updated_range, r2, end_stage, end_depth)
+                    if action != "fold":
+                        updated_range = self.bayesian_range_update(r1, action, node.strategy_matrix, node.action_to_index)
+                        v1_action, v2_action = self.subtree_traversal_rollout(child, updated_range, r2, end_stage, end_depth)
+                    else:
+                        v1_action, v2_action = self.subtree_traversal_rollout(child, r1, r2, end_stage, end_depth)
                 elif node.player == "player_two":
-                    updated_range = self.bayesian_range_update(r2, action, node.strategy_matrix, node.action_to_index)
-                    v1_action, v2_action = self.subtree_traversal_rollout(child, r1, updated_range, end_stage, end_depth)
+                    if action != "fold":
+                        updated_range = self.bayesian_range_update(r2, action, node.strategy_matrix, node.action_to_index)
+                        v1_action, v2_action = self.subtree_traversal_rollout(child, r1, updated_range, end_stage, end_depth)
+                    else:
+                        v1_action, v2_action = self.subtree_traversal_rollout(child, r1, r2, end_stage, end_depth)
                 for hand in self.possible_hands:
                     hand_label = HandLabelGenerator.get_hand_label(hand)
                     index = self.hand_label_to_index[hand_label]
@@ -242,7 +256,6 @@ class Resolver:
 
     def resolve(self, state: PokerState, r1, r2, end_stage, end_depth, T: int, player_hand: List[Card]):
         root = self.build_initial_subtree(state, end_stage, end_depth)
-
         strategy_matrices = []
         for _ in range(T):
             v1, v2 = self.subtree_traversal_rollout(root, r1, r2, end_stage, end_depth)
@@ -261,6 +274,7 @@ class Resolver:
 
         chosen_action_probability = average_strategy_matrix[hand_index, chosen_action_index]
         chosen_action = root.index_to_action[chosen_action_index]
+        print(average_strategy_matrix[hand_index, :])
         print(chosen_action, chosen_action_probability)
 
         # Update range

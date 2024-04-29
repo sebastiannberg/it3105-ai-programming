@@ -23,4 +23,3 @@ class PokerGame:
     history: List[Tuple[str, Action]] # (stage, action)
     pot: int
     current_bet: int
-    ai_strategy: Optional[str]

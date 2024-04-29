@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from 'axios';
 import Action from "./Action";
 
-const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinners, onAiDecision, aiDecision }) => {
+const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinners, onAiDecision, setAiMethod, aiDecision }) => {
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -20,7 +20,7 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
 
       try {
         if (currentPlayerIsAI) {
-          await fetchAIDecision();
+          await fetchAIMethod();  // Fetch AI method first, then decision
         } else if (currentPlayerIsHuman && gameState.current_player.legal_actions == null) {
           await assignLegalActions();
         }
@@ -34,14 +34,30 @@ const ActionPane = ({ gameState, fetchGameState, onWinnerDetermined, onRoundWinn
     handleGameUpdate();
   }, [gameState, currentPlayerIsAI, currentPlayerIsHuman]);
 
-  const fetchAIDecision = async () => {
+  const fetchAIMethod = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/ai-decision");
-      onAiDecision(response.data);
+      const methodResponse = await axios.get("http://127.0.0.1:5000/ai-method");
+      const aiMethod = methodResponse.data.ai_method;
+      if (aiMethod) {
+        setAiMethod(aiMethod)
+        await fetchAIDecision(aiMethod); // Fetch AI decision using the fetched method
+      } else {
+        throw new Error("AI method not found or it's not the AI's turn.");
+      }
     } catch (error) {
-      console.error("Failed to fetch AI decision:", error);
+      console.error("Failed to fetch AI method:", error);
     }
-  };
+  }
+
+  const fetchAIDecision = async (aiMethod) => {
+    try {
+        const response = await axios.get(`http://127.0.0.1:5000/ai-decision?method=${aiMethod}`);
+        onAiDecision(response.data);
+    } catch (error) {
+        console.error("Failed to fetch AI decision:", error);
+    }
+};
+
 
   const assignLegalActions = async () => {
     const playerName = gameState.current_player.name;
