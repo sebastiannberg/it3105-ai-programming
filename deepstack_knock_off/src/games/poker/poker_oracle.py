@@ -457,3 +457,28 @@ class PokerOracle:
         tie_probability = ties / num_rollouts
         lose_probability = losses / num_rollouts
         return win_probability, tie_probability, lose_probability
+
+    @staticmethod
+    def gen_cheat_sheet(deck_size: int):
+        start_time = time.time()
+
+        possible_hands, _, _ = PokerOracle.get_possible_hands_with_indexing(deck_size)
+
+        # Initialize cheat sheet to empty dictionary
+        cheat_sheet = {}
+
+        # Iterate over all possible hands
+        for hand in possible_hands:
+            # Calculate win probability for this hand
+            win_prob, _, _ = PokerOracle.perform_rollouts(list(hand), public_cards=[], num_cards_deck=deck_size)
+
+            hand_label = HandLabelGenerator.get_hand_label(hand)
+            # Set cheat sheet to win probability for this hand
+            cheat_sheet[hand_label] = win_prob
+
+        end_time = time.time()
+        duration = end_time - start_time
+        duration_minutes = duration / 60
+        print(f"gen_cheat_sheet took {duration_minutes:.2f} minutes to run")
+
+        return cheat_sheet

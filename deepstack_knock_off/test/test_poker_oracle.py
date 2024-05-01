@@ -270,3 +270,7 @@ player_hand_label = HandLabelGenerator.get_hand_label(player_hand)
 opponent_hand = [Card("K", "hearts"), Card("K", "spades")]
 opponent_hand_label = HandLabelGenerator.get_hand_label(opponent_hand)
 assert utility_matrix[hand_label_to_index[player_hand_label], hand_label_to_index[opponent_hand_label]] == -1
+
+# Test Cheat Sheet
+cheat_sheet = PokerOracle.gen_cheat_sheet(deck_size=24)
+sorted_cheat_sheet = dict(sorted(cheat_sheet.items(), key=lambda item: item[1], reverse=True))
