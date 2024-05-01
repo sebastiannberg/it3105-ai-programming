@@ -19,6 +19,7 @@ class PokerDataset(Dataset):
 
         TEST_SIZE = 0.1
         VALIDATION_SIZE = 0.1
+        # Ensure we get the same split every time
         RANDOM_STATE = 10
 
         full_data = pd.read_csv(self.dataset_path)
@@ -50,11 +51,13 @@ class PokerDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
+        # Public cards stored as strings in csv file
         public_cards_string = self.data.iloc[idx]["public_cards"]
+        # Convert string to list
         public_cards_list = ast.literal_eval(public_cards_string)
         public_cards_vector = self.public_cards_to_one_hot(public_cards_list)
 
-        # Deserialize r1, r2, v1, and v2 from string representations of lists to numpy arrays
+        # Convert r1, r2, v1, and v2 from string representations of lists to numpy arrays
         r1 = np.array(ast.literal_eval(self.data.iloc[idx]["r1"]), dtype=np.float64)
         r2 = np.array(ast.literal_eval(self.data.iloc[idx]["r2"]), dtype=np.float64)
         v1 = np.array(ast.literal_eval(self.data.iloc[idx]["v1"]), dtype=np.float64)

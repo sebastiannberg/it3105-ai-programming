@@ -15,8 +15,11 @@ class CustomLoss(nn.Module):
         loss_utility_sum = self.loss_function(utility_sum, torch.zeros_like(utility_sum))
 
         # Additional penalty for non-zero predictions where v1 or v2 is zero
+        # Mask v1 and v2 creates boolean list
         mask_v1 = (v1 == 0)
         mask_v2 = (v2 == 0)
+        # Multiplying with mask retrieves predicted values that should be zero
+        # Added since network in general was bad at predicting zeros
         penalized_loss_v1 = self.loss_function(predicted_v1 * mask_v1, torch.zeros_like(predicted_v1))
         penalized_loss_v2 = self.loss_function(predicted_v2 * mask_v2, torch.zeros_like(predicted_v2))
 

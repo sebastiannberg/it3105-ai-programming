@@ -410,8 +410,6 @@ class PokerOracle:
 
     @staticmethod
     def perform_rollouts(player_hand: List[Card], public_cards: List[Card], num_cards_deck: int,  num_opponent_players: int = 1, num_rollouts: int = 5000):
-        if len(public_cards) not in (0, 3, 4, 5):
-            raise ValueError("Length of public cards must be 0, 3, 4 or 5 when performing rollouts")
         if len(player_hand) != 2:
             raise ValueError("Length of player hand should be 2 when performing rollouts")
 
@@ -439,13 +437,13 @@ class PokerOracle:
 
             # Determine the best hand and possible wins or ties
             best_hand = max(all_hands, key=lambda hand: (PokerOracle.hand_type_ranking[hand.category], hand.primary_value, hand.kickers))
-            tie_count = 0
+            winner_count = 0
             for hand in all_hands:
                 if hand.category == best_hand.category and hand.primary_value == best_hand.primary_value and hand.kickers == best_hand.kickers:
-                    tie_count += 1
+                    winner_count += 1
 
             if player_hand_type.category == best_hand.category and player_hand_type.primary_value == best_hand.primary_value and player_hand_type.kickers == best_hand.kickers:
-                if tie_count == 1:  # No ties, player wins
+                if winner_count == 1:  # No ties, player wins
                     wins += 1
                 else:  # Player's hand is part of a tie
                     ties += 1

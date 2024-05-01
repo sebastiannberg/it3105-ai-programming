@@ -63,6 +63,7 @@ def train():
 
             loss = criterion(predicted_v1, predicted_v2, v1, v2, utility_sum)
             loss.backward()
+            # Update weight parameters
             optimizer.step()
 
             running_loss.append(loss.item())

@@ -20,7 +20,7 @@ def simulate_poker_game(end_stage: str, poker_config, poker_rules):
     while game_manager.game.stage != end_stage:
         player = game_manager.game.current_player
         game_manager.assign_legal_actions_to_player(player_name=player.name)
-        # Remove fold action
+        # Remove fold action to ensure that it runs to the correct end stage
         all_actions = [action for action in player.legal_actions if not isinstance(action, Fold)]
         selected_action = random.choice(all_actions)
         game_manager.apply_action(player.name, selected_action.name)

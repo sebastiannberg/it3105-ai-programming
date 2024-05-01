@@ -54,6 +54,7 @@ class Resolver:
                     if node.state.stage != child_state.stage and child_state.stage != "showdown":
                         # Create a Chance Node when transitioning to a new stage
                         child_node = ChanceNode(child_state, parent=node, stage_depth=next_stage_depth)
+                        # If last element in history is a fold action or stage is showdown
                     elif child_state.history[-1][2] == "fold" or child_state.stage == "showdown":
                         # Create a Terminal Node for game-ending actions
                         child_node = TerminalNode(child_state, parent=node, stage_depth=next_stage_depth)
@@ -78,7 +79,7 @@ class Resolver:
                     # Generate new utility matrix for descendants
                     utility_matrix = PokerOracle.gen_utility_matrix(child_state.public_cards, deck_size=self.state_manager.poker_rules["deck_size"])
                     child_node.set_utility_matrix(utility_matrix)
-                    parent_public_card_set = {(card.rank, card.suit) for card in node.state.public_cards}
+                    parent_public_card_set = set((card.rank, card.suit) for card in node.state.public_cards)
                     edge_value = [card for card in child_state.public_cards if (card.rank, card.suit) not in parent_public_card_set]
                     node.add_child(child_node, edge_value)
                     queue.append((child_node, 1))  # Reset stage depth because of new stage
@@ -151,6 +152,7 @@ class Resolver:
         for hand in self.possible_hands:
             hand_label = HandLabelGenerator.get_hand_label(hand)
             prob_action_hand = strategy_matrix[self.hand_label_to_index[hand_label], action_to_index[action]]
+            # Probability of hand is retrieved from the prior range vector
             prob_hand = range_prior[0, self.hand_label_to_index[hand_label]]
             prob_action = np.sum(strategy_matrix[:, action_to_index[action]]) / np.sum(strategy_matrix)
             updated_range_value = (prob_action_hand * prob_hand) / prob_action
@@ -167,11 +169,11 @@ class Resolver:
                 loser = node.state.history[-1][1]
                 if node.state.stage == "preflop":
                     if loser == "player_one":
-                        v1 = np.full((1, len(self.possible_hands)), -0.5)
-                        v2 = np.full((1, len(self.possible_hands)), 0.5)
+                        v1 = np.full((1, len(self.possible_hands)), -1)
+                        v2 = np.full((1, len(self.possible_hands)), 1)
                     elif loser == "player_two":
-                        v1 = np.full((1, len(self.possible_hands)), 0.5)
-                        v2 = np.full((1, len(self.possible_hands)), -0.5)
+                        v1 = np.full((1, len(self.possible_hands)), 1)
+                        v2 = np.full((1, len(self.possible_hands)), -1)
                 else:
                     if loser == "player_one":
                         negative_utility_matrix = -np.abs(node.utility_matrix)
@@ -184,6 +186,7 @@ class Resolver:
         elif node.state.stage == end_stage and node.stage_depth == end_depth:
             v1, v2 = self.run_neural_network(node.state.stage, node.state, r1, r2)
         elif isinstance(node, PlayerNode):
+            # Initialize value vectors to zero vectors and then update them later
             v1 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             v2 = np.zeros((1, len(self.possible_hands)), dtype=np.float64)
             for child, action in node.children:
@@ -191,6 +194,7 @@ class Resolver:
                     if action != "fold":
                         updated_range = self.bayesian_range_update(r1, action, node.strategy_matrix, node.action_to_index)
                         v1_action, v2_action = self.subtree_traversal_rollout(child, updated_range, r2, end_stage, end_depth)
+                    # If action is fold range vector is not used to compute value vector
                     else:
                         v1_action, v2_action = self.subtree_traversal_rollout(child, r1, r2, end_stage, end_depth)
                 elif node.player == "player_two":
@@ -227,6 +231,7 @@ class Resolver:
 
             for hand in self.possible_hands:
                 for action in all_actions:
+                    # Find the child node that corresponds to action
                     child_node = [child[0] for child in node.children if child[1] == action][0]
                     hand_label = HandLabelGenerator.get_hand_label(hand)
                     hand_index = node.hand_label_to_index[hand_label]
@@ -269,10 +274,10 @@ class Resolver:
         hand_label = HandLabelGenerator.get_hand_label(player_hand)
         hand_index = self.hand_label_to_index[hand_label]
         action_probabilities = average_strategy_matrix[hand_index]
+        # Create numpy array containing the action indices (0, 1, 2, 3, ...)
         action_indices = np.arange(len(action_probabilities))
         chosen_action_index = np.random.choice(action_indices, p=action_probabilities)
 
-        chosen_action_probability = average_strategy_matrix[hand_index, chosen_action_index]
         chosen_action = root.index_to_action[chosen_action_index]
 
         # Update range
@@ -284,7 +289,8 @@ class Resolver:
 
         predicted_v1, predicted_v2 = self.predictor.make_prediction(stage, r1, r2, public_cards, state.pot)
 
-        # Element-wise multiplication to zero out indices where range vectors are zero
+        # Element-wise multiplication to zero out indices in value vectors where range vectors are zero
+        # This is done because neural network sometimes predict none zeros where we know it should be zero
         predicted_v1 = predicted_v1 * (r1 != 0)
         predicted_v2 = predicted_v2 * (r2 != 0)
 

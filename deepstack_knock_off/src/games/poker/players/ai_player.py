@@ -28,7 +28,7 @@ class AIPlayer(Player):
         win_prob, tie_prob, lose_prob = PokerOracle.perform_rollouts(self.hand, public_cards, num_cards_deck, num_opponent_players)
         print(win_prob, tie_prob, lose_prob)
 
-        # Normalize probabilities
+        # Normalize probabilities to ensure that it sums to 1
         total_prob = win_prob + tie_prob + lose_prob
         win_prob /= total_prob
         tie_prob /= total_prob
@@ -53,7 +53,8 @@ class AIPlayer(Player):
                     action_scores[action] = win_prob + (tie_prob * 0.75)
                 elif action.raise_type == "raise":
                     action_scores[action] = win_prob * 0.85 + (tie_prob * 0.5)
-
+                    
+        # Unpack tuple received from .items()
         actions, scores = zip(*action_scores.items())
         total_score = sum(scores)
         # Calculate the probability of choosing actions

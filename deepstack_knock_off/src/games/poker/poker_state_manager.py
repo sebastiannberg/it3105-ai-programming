@@ -59,7 +59,7 @@ class PokerStateManager:
             history=state_history
         )
 
-    def find_legal_actions(self, parent_state: PokerState, player: str) -> List[PokerState]:
+    def find_legal_actions(self, parent_state: PokerState, player: str):
         if player not in ["player_one", "player_two"]:
             raise ValueError(f"player must be either player_one or player_two but was {player}")
         legal_actions = []
