@@ -120,22 +120,14 @@ def test(model_filename: str):
     print(f"Loss Function: {LOSS_FUNCTION.__class__.__name__}")
 
     running_test_loss = []
-    comparing = []
     with torch.no_grad():
         for r1, r2, public_cards, pot, v1, v2 in test_data_loader:
             predicted_v1, predicted_v2, utility_sum = model(r1, r2, public_cards, pot)
-            comparing.append((v1.numpy(), predicted_v1.numpy()))
             loss = criterion(predicted_v1, predicted_v2, v1, v2, utility_sum)
             running_test_loss.append(loss.item())
-            #print(utility_sum)
 
     average_test_loss = sum(running_test_loss) / len(running_test_loss)
     print(f"Average Test Loss: {average_test_loss}")
-
-    # for v1, predicted_v1 in comparing:
-    #     for i in range(BATCH_SIZE):
-    #         for j in range(276):
-    #             print(v1[i, j], "|", predicted_v1[i, j])
 
 train()
 #test("25-04-2024_16-28-13_epoch_180.pt")

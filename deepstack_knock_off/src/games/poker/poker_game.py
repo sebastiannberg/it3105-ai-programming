@@ -20,6 +20,6 @@ class PokerGame:
     deck: Deck
     public_cards: List[Card]
     stage: str
-    history: List[Tuple[str, Action]] # (stage, action)
+    history: List[Tuple[str, Action]] # (stage, Action)
     pot: int
     current_bet: int

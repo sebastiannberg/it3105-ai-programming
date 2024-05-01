@@ -274,8 +274,6 @@ class Resolver:
 
         chosen_action_probability = average_strategy_matrix[hand_index, chosen_action_index]
         chosen_action = root.index_to_action[chosen_action_index]
-        print(average_strategy_matrix[hand_index, :])
-        print(chosen_action, chosen_action_probability)
 
         # Update range
         updated_r1 = self.bayesian_range_update(r1, chosen_action, average_strategy_matrix, root.action_to_index)

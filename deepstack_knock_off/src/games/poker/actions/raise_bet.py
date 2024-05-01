@@ -11,7 +11,7 @@ class RaiseBet(Action):
         self.chip_cost: int = chip_cost
         self.raise_amount: int = raise_amount
         self.raise_type: str = raise_type
-        name = ""
+        name = None
         if raise_type == "small_blind":
             name = f"Small Blind ({chip_cost})"
         elif raise_type == "big_blind":
@@ -27,6 +27,7 @@ class RaiseBet(Action):
         super().__init__(name=name, player=player)
 
     def apply(self, game: PokerGame) -> Dict:
+        # Add the action to the game history
         game.history.append((game.stage, self))
         self.player.chips -= self.chip_cost
         game.current_bet += self.raise_amount
@@ -35,6 +36,7 @@ class RaiseBet(Action):
         if self.raise_type == "call":
             self.player.call()
         elif self.raise_type == "raise":
+            # If the player of this action raises, then no other player has called or raised
             for player_temp in game.round_players:
                 player_temp.has_called = False
                 player_temp.last_raised = False

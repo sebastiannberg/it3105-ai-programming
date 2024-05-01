@@ -26,6 +26,7 @@ class PokerOracle:
         "high_card": 1
     }
 
+    # Caching frequently calculated variables
     _cache_possible_hands: List[Tuple[Card, Card]]
     _cache_hand_label_to_index: Dict[str, int] = {}
     _cache_index_to_hand_label: List[str] = []
@@ -51,18 +52,44 @@ class PokerOracle:
 
     @staticmethod
     def get_possible_hands_with_indexing(deck_size: int):
+        """Generates all possible poker hands from a deck of a specified size, and maintains a mapping
+        of these hands to unique indices. This function uses caching to avoid redundant calculations
+        when called multiple times with the same deck size.
+
+        Returns
+        -------
+            A tuple containing three elements:
+                - A list of tuples, where each tuple represents a possible hand (combination of two cards).
+                - A dictionary mapping each hand's label (as determined by `HandLabelGenerator.get_hand_label`) to its index.
+                - A list where each index corresponds to a hand's label, allowing for reverse lookup from index to hand label.
+
+        Purpose
+        -------
+            The function is designed to facilitate operations that require mapping hand labels to indices and vice versa,
+            especially useful in scenarios where hands need to be represented as numerical indices for compatibility with
+            data structures like numpy arrays. Caching is employed to optimize performance by storing the generated hands,
+            their labels, and the mappings if the deck size has not changed between calls.
+        """
+
+        # Only do calculations again for a new deck_size
         if PokerOracle._cache_deck_size != deck_size:
+            # Generate unshuffled deck
             deck = PokerOracle.gen_deck(num_cards=deck_size, shuffled=False)
+            # Find all possible combinations of choose two
             possible_hands = list(itertools.combinations(deck.cards, 2))
 
             hand_label_to_index = {}
             index_to_hand_label = []
 
             for idx, hand in enumerate(possible_hands):
+                # Get the hand label string
                 label = HandLabelGenerator.get_hand_label(hand)
+                # Associate the hand label with the index
                 hand_label_to_index[label] = idx
+                # Create reverse mapping from index to hand label
                 index_to_hand_label.append(label)
 
+            # Cache the new calculations
             PokerOracle._cache_possible_hands = possible_hands
             PokerOracle._cache_hand_label_to_index = hand_label_to_index
             PokerOracle._cache_index_to_hand_label = index_to_hand_label
@@ -76,9 +103,6 @@ class PokerOracle:
 
     @staticmethod
     def get_hand_label_from_index(index: int, deck_size: int) -> str:
-        """
-        Returns the hand label corresponding to the given index
-        """
         _, _, index_to_hand_label = PokerOracle.get_possible_hands_with_indexing(deck_size=deck_size)
         if 0 <= index < len(index_to_hand_label):
             return index_to_hand_label[index]

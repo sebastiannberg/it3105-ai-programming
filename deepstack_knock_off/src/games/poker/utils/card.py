@@ -15,8 +15,10 @@ class Card:
         if suit not in valid_suits:
             raise ValueError(f"Invalid suit {suit}")
 
+    # Easier to read when printing this class for debugging
     def __repr__(self):
         return f"Card('{self.rank}', '{self.suit}')"
 
+    # Easier to read when printing this class for debugging
     def __str__(self):
         return f"{self.rank}{self.suit}"

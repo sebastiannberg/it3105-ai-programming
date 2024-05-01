@@ -123,7 +123,6 @@ def ai_decision():
     try:
         # Retrieve the AI method from query parameters
         ai_method = request.args.get("method", default=None, type=str)
-        print(ai_method)
         if ai_method not in ["rollout", "resolver"]:
             return jsonify({"error": "Invalid AI method. Choose 'rollout' or 'resolver'."}), 400
 

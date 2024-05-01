@@ -20,6 +20,7 @@ class AIPlayer(Player):
         self.resolver = Resolver(state_manager)
         self.state_manager = state_manager
         possible_hands, _, _ = PokerOracle.get_possible_hands_with_indexing(deck_size=self.state_manager.poker_rules["deck_size"])
+        # Initializer range vectors to uniform probability distribution
         self.r1 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
         self.r2 = np.full((1, len(possible_hands)), 1/len(possible_hands), dtype=np.float64)
 
@@ -39,6 +40,8 @@ class AIPlayer(Player):
         else:
             actions_to_consider = self.legal_actions
 
+        # Calculate scores for each action using our own scalars
+        # Scores will be used to later calculate probability for choosing an action
         action_scores = {}
         for action in actions_to_consider:
             if isinstance(action, Check):
@@ -53,33 +56,44 @@ class AIPlayer(Player):
 
         actions, scores = zip(*action_scores.items())
         total_score = sum(scores)
+        # Calculate the probability of choosing actions
         probabilities = [score / total_score for score in scores] if total_score > 0 else [1.0 / len(scores)] * len(scores)
 
         for action, probability in zip(actions, probabilities):
+            # Print the action probabilities for debugging
             print(f"Action: {action.name}, Probability: {probability:.4f}")
 
+        # Choose an action based on the probabilities
         chosen_action = np.random.choice(actions, p=probabilities)
         return chosen_action
 
     def make_decision_resolving(self, game: PokerGame) -> Action:
+        # Generate PokerState from the current PokerGame
         state = self.state_manager.gen_state_from_game(game, player_one_perspective=self)
         # If stage is river, build tree to showdown stage
         if state.stage == "river":
             chosen_action, updated_r1, _, _ = self.resolver.resolve(state, self.r1, self.r2, end_stage="showdown", end_depth=0, T=3, player_hand=self.hand)
-        # Else build tree to next stage with depth 1
+        # Else build tree to next stage with depth 1, this will trigger the neural network for the next stage
         else:
+            # Find the next stage
             next_stage = self.state_manager.stage_change[state.stage]
+            # Run the resolver
             chosen_action, updated_r1, _, _ = self.resolver.resolve(state, self.r1, self.r2, end_stage=next_stage, end_depth=1, T=3, player_hand=self.hand)
         self.r1 = updated_r1
 
-        action = chosen_action.lower()  # Convert to lowercase to ensure consistency in comparison
+        # Convert to lowercase to ensure consistency in comparison
+        action = chosen_action.lower()
         if "fold" in chosen_action.lower():
+            # Return the action that is instance of Fold class
             return next((a for a in self.legal_actions if isinstance(a, Fold)), None)
         if "check" in chosen_action.lower():
+            # Return the action that is instance of Check class
             return next((a for a in self.legal_actions if isinstance(a, Check)), None)
         if "call" in chosen_action.lower():
+            # Return the action that is instance of RaiseBet class and also has raise_type set to "call"
             return next((a for a in self.legal_actions if isinstance(a, RaiseBet) and getattr(a, "raise_type", None) == "call"), None)
         if "raise" in chosen_action.lower():
             # Assuming the raise amount is the last element in the action string
             raise_amount = int(action.split()[-1])
+            # Return the action that is instance of RaiseBet class and also has raise_amount set to the corresponding value
             return next((a for a in self.legal_actions if isinstance(a, RaiseBet) and a.raise_amount == raise_amount), None)

@@ -43,7 +43,9 @@ class PokerGameManager:
         self.assign_next_player()
 
     def assign_legal_actions_to_player(self, player_name: str) -> None:
+        # Find Player object that correspont with player_name argument
         player = self.find_round_player_by_name(player_name)
+        # Instantiate legal_actions to empty list
         legal_actions: List[Action] = []
         # Fold
         legal_actions.append(Fold(player))
@@ -51,9 +53,15 @@ class PokerGameManager:
         if self.game.current_bet == player.player_bet:
             legal_actions.append(Check(player=player))
         # Call
+        # Check if the player's current bet is less than the current bet of the game
+        # Verify if the player has enough chips to match the current game bet
         if player.player_bet < self.game.current_bet and player.chips >= (self.game.current_bet - player.player_bet):
             legal_actions.append(RaiseBet(player, chip_cost=(self.game.current_bet - player.player_bet), raise_amount=0, raise_type="call"))
         # Raise
+        # Check if the player has enough chips to make a raise
+        # The required chips are the fixed raise amount defined in the rules,
+        # plus the difference between the current game bet and the player's last bet
+        # Cannot raise if a player has gone all in
         if player.chips >= self.poker_rules["fixed_raise"] + (self.game.current_bet - player.player_bet) and not any(player.has_all_in or player.chips == 0 for player in self.game.round_players):
             current_stage_history = [entry[1] for entry in self.game.history if entry[0] == self.game.stage]
             if len([action for action in current_stage_history if isinstance(action, RaiseBet) and action.raise_type=="raise"]) < self.poker_rules["max_num_raises_per_stage"]:
@@ -64,26 +72,29 @@ class PokerGameManager:
         player.legal_actions = legal_actions
 
     def apply_action(self, player_name: str, action_name: str) -> Dict:
-        # Find the player by name
+        # Find the player object by name
         player = self.find_round_player_by_name(player_name)
         if not player:
             return {"error": "Player not found"}
 
-        # Find action by player name and action name
+        # Find action object by player name and action name
         selected_action = None
         for legal_action in  player.legal_actions:
             if player_name == legal_action.player.name and action_name == legal_action.name:
                 selected_action = legal_action
                 break
 
+        # Use Action class apply function based on type of Action
         action_result = selected_action.apply(self.game)
         # Reset player's legal actions after applying
         player.legal_actions = None
 
         post_action_result = self.post_action()
+        # If post_action_result is None, we still have no winners of the round or the game
         if not post_action_result:
             return action_result
 
+        # If post_action_result is not None, we have winners and return the winner information
         return post_action_result
 
     def post_action(self) -> Optional[Dict]:
@@ -133,21 +144,25 @@ class PokerGameManager:
             self.assign_next_player()
 
     def get_ai_method(self):
+        # Return None if it is not an AI player's turn
         if not isinstance(self.game.current_player, AIPlayer):
             return None
 
+        # Return "rollout" if the resolver is disabled in poker config
         if not self.poker_config["enable_resolver"]:
             return {"ai_method": "rollout"}
 
+        # Return "resolver" or "rollout" with probability defined in poker config
         if random.random() < self.poker_config["prob_resolver"]:
             return {"ai_method": "resolver"}
-
         return {"ai_method": "rollout"}
 
     def get_ai_decision(self, ai_method: str) -> Dict:
+        # Return None if it is not an AI player's turn
         if not isinstance(self.game.current_player, AIPlayer):
             return None
 
+        # Assign legal actions to the AI player
         self.assign_legal_actions_to_player(self.game.current_player.name)
 
         if ai_method == "rollout":
@@ -209,6 +224,7 @@ class PokerGameManager:
             self.game.small_blind_player = next_small_blind_player
             self.game.big_blind_player = next_big_blind_player
         else:
+            # If it is start of a new game, just say small blind is first player and big blind is second player
             next_small_blind_player = round_players[0]
             next_big_blind_player = round_players[1]
 
@@ -216,17 +232,18 @@ class PokerGameManager:
         self.game.big_blind_player = next_big_blind_player
 
     def perform_blind_bets(self):
+        # Find current blind players
         current_small_blind_player = self.game.small_blind_player
         current_big_blind_player = self.game.big_blind_player
         if not current_small_blind_player or not current_big_blind_player:
             raise ValueError("Either small blind or big blind is not assigned to a player")
-        # Small blind action
+        # Create and apply small blind action
         small_blind_action = RaiseBet(player=current_small_blind_player,
                                       chip_cost=self.poker_config["small_blind_amount"],
                                       raise_amount=self.poker_config["small_blind_amount"],
                                       raise_type="small_blind")
         small_blind_action.apply(self.game)
-        # Big blind action
+        # Ceate and apply big blind action
         raise_amount = self.poker_config["big_blind_amount"] - self.poker_config["small_blind_amount"]
         big_blind_action = RaiseBet(player=current_big_blind_player,
                                     chip_cost=self.poker_config["big_blind_amount"],
@@ -236,23 +253,28 @@ class PokerGameManager:
 
     def deal_cards(self):
         if self.game.stage == "preflop":
+            # Deal cards to players
             for player in self.game.round_players:
                 cards = self.game.deck.deal_cards(num_cards=2)
                 player.receive_cards(*cards)
         elif self.game.stage == "flop":
+            # Deal three public cards
             cards = self.game.deck.deal_cards(num_cards=3)
             self.game.public_cards.extend(cards)
         elif self.game.stage == "turn" or self.game.stage == "river":
+            # Deal one public card
             cards = self.game.deck.deal_cards(num_cards=1)
             self.game.public_cards.extend(cards)
 
     def assign_next_player(self, stage_change=False):
+        # If it is start of a new round
         if not self.game.current_player:
             # Assign player after big blind
             current_big_blind_player = self.game.big_blind_player
             big_blind_index = self.game.round_players.index(current_big_blind_player)
             next_player_index = (big_blind_index + 1) % len(self.game.round_players)
             self.game.current_player = self.game.round_players[next_player_index]
+        # Stage change
         elif stage_change:
             # Assign first player after dealer
             if not self.game.small_blind_player.has_folded:
@@ -266,20 +288,26 @@ class PokerGameManager:
                     if next_player_index == small_blind_index:
                         break
                 self.game.current_player = self.game.game_players[next_player_index]
+        # Still in the current round, go to next player in round_players
         else:
             # Assign player after current player
             current_player = self.game.current_player
+            # Find the index if game_players for this player
             current_player_index = self.game.game_players.index(current_player)
             next_player_index = (current_player_index + 1) % len(self.game.game_players)
+            # Find the next player index that have not folded
             while self.game.game_players[next_player_index].has_folded:
                 next_player_index = (next_player_index + 1) % len(self.game.game_players)
+                # Break if we have gone through the list of players but not found a viable new current player
                 if next_player_index == current_player_index:
                     break
             self.game.current_player = self.game.game_players[next_player_index]
 
     def check_for_proceed_stage(self):
         if self.game.stage == "preflop":
+            # If the stage is preflop and no player have raised
             if not any(player.last_raised for player in self.game.round_players):
+                # And big blind has checked and all other players have either called or folded
                 if self.game.big_blind_player.has_checked and (all(player.has_called or player.has_folded) for player in self.game.round_players):
                     return True
             else:
@@ -309,11 +337,13 @@ class PokerGameManager:
 
     def proceed_stage(self) -> Optional[List[Dict]]:
         for player in self.game.round_players:
+            # Reset all player's bet and status variables
             player.player_bet = 0
             player.has_checked = False
             player.has_called = False
             player.last_raised = False
 
+        # Initialize winners to None
         winners = None
         if self.game.stage in ["preflop", "flop", "turn"]:
             # Advance the game stage
@@ -328,6 +358,7 @@ class PokerGameManager:
             # Showdown and determine winners
             winners = self.showdown()
 
+        # Winners will be None if no showdown has happened
         return winners
 
     def showdown(self) -> List[Dict]:
@@ -366,6 +397,7 @@ class PokerGameManager:
         return winners_details
 
     def check_for_early_round_winner(self):
+        # Returns the last player standing if there are only one player left in round_players
         if len(self.game.round_players) == 1:
             return self.game.round_players[0]
         else:
@@ -382,9 +414,10 @@ class PokerGameManager:
         self.game.pot -= total_distributed
 
     def end_round_next_round(self):
-        # Reset every player still in the game
+        # Reset variables for every player still in the game
         for player in self.game.game_players:
             player.ready_for_new_round()
+        # Instantiate round_players
         self.game.round_players = self.game.game_players.copy()
         # Reset round variables
         self.game.current_player = None
@@ -402,6 +435,7 @@ class PokerGameManager:
     def remove_busted_players(self):
         for player in self.game.game_players:
             if player.chips <= 0:
+                # Remove player if the chips is negative
                 self.game.game_players.remove(player)
 
     def check_for_game_winner(self):
