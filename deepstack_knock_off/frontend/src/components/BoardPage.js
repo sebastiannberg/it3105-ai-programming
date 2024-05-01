@@ -10,6 +10,9 @@ const BoardPage = () => {
   const [roundWinners, setRoundWinners] = useState([]);
   const [aiMethod, setAiMethod] = useState(null);
   const [aiDecision, setAiDecision] = useState(null);
+  const [showAICards, setShowAICards] = useState(false);
+
+  const toggleAICards = () => setShowAICards(!showAICards);
 
   const fetchGameState = async () => {
     try {
@@ -38,6 +41,7 @@ const BoardPage = () => {
         chips={player.chips}
         hand={player.hand}
         bet={player.player_bet}
+        showCards={showAICards || player.name.includes("Human")}
       />
     ));
   };
@@ -70,6 +74,9 @@ const BoardPage = () => {
       <div className='player-section'>
         <h1>Players</h1>
         {gameState ? renderPlayers(gameState.game_players) : <p>Loading players...</p>}
+        <button onClick={toggleAICards} className="poker-button">
+          {showAICards ? 'Hide AI Cards' : 'Show AI Cards'}
+        </button>
       </div>
       <div className='board-section'>
         <h1>

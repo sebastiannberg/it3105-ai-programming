@@ -1,10 +1,10 @@
 import Card from "./Card";
 
 
-const Player = ({ name, chips, hand, bet }) => {
-  const handCards = hand.map((card, index) => (
+const Player = ({ name, chips, hand, bet, showCards }) => {
+  const handCards = showCards ? hand.map((card, index) => (
     <Card key={index} rank={card.rank} suit={card.suit} />
-  ));
+  )) : null;
 
   return (
     <div className="player">
