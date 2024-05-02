@@ -97,12 +97,14 @@ class Resolver:
         else:
             return "player_two" if current_player == "player_one" else "player_one"
 
+    # For testing
     def count_nodes(self, root: Node):
         count = 1
         for child, _ in root.children:
             count += self.count_nodes(child)
         return count
-
+    
+    # For testing
     def get_leaf_nodes(self, root: Node):
         leaves = []
         queue = [root]
@@ -116,6 +118,7 @@ class Resolver:
 
         return leaves
 
+    # For testing
     def find_tree_paths(self, node, path=None):
         if path is None:
             path = []
@@ -136,6 +139,7 @@ class Resolver:
 
         return paths
 
+    # For testing
     def print_tree_path(self, path):
         for node, edge in path:
             if isinstance(node, PlayerNode):
